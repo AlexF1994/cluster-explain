@@ -1,35 +1,50 @@
+from dataclasses import dataclass
 from turtle import Shape
-from typing import Any
+from typing import Any, Tuple
 
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 import numpy as np
 import pandas as pd
+from errors import NotFittedError
 from metrics import get_distance_metric
 from nptyping import NDArray
 from nptyping.typing_ import Floating, Int
-from sklearn import datasets, metrics
-from sklearn.cluster import KMeans
-from errors import NotFittedError
 
+# TODO: - Refactoring abschließen
+#       - Write tests
+#       - refactor best calc
+#       - test functionality after refactor
+#       - Write docstrings
+#       - Write Docs
+#       - CICD pipeline Github Actions
 
 class Xkm:
 
     "eXplainable k-medoids"
     
-    def __init__(self, data: NDArray[Any, Floating], 
-                 cluster_centers: NDArray[Any, Floating],
+    def __init__(self, data: NDArray[Shape["num_obs, num_features"], Floating], 
+                 cluster_centers: NDArray[Shape["num_clusters, num_features"], Floating],
                  distance_metric: str, 
-                 cluster_predictions: NDArray[Shape["*"], Int]
+                 cluster_predictions: NDArray[Shape["num_obs"], Int]
                  ):
         self.distance_metric = distance_metric
-        self.cluster_centers =cluster_centers
+        self.cluster_centers = cluster_centers
         self.data = data
         self.predictions = cluster_predictions
         self.feature_wise_distance_matrix = None
+        self.is_fitted = False
         
     
-    def _calculate_feature_wise_distance_matrix(self):
+    def _calculate_feature_wise_distance_matrix(self
+        ) -> NDArray[Shape["num_obs, num_clusters, num_features"], Floating]:
+        """
+        Calculate feature-wise distance matrix of every feature of every observation to
+        the corresponding feature coordinate of every cluster.
+
+        Returns:
+            NDArray[Any, Floating]: A distance tensor of shape num_observations x num_clusters x num_features
+        """
          
         centers = np.array([self.cluster_centers for observation_coordinates in self.data])
 
@@ -42,13 +57,15 @@ class Xkm:
                                         for cluster_centers, observation_ccordinates 
                                         in zip(centers, self.data)]                
     
-        self.feature_wise_distance_matrix = np.array(feature_wise_distance_matrix)
+        return np.array(feature_wise_distance_matrix)
     
-    def _best_calc(self):
-        if not self.feature_wise_distance_matrix:
-            raise NotFittedError("Please calculate the featurwise distance matrix first!")
-        
-        num_features = self.feature_wise_distance_matrix.shape[2]
+    def _best_calc(self) -> tuple[NDArray, NDArray]:
+        try :
+            distance_matrix = self.feature_wise_distance_matrix
+        except AttributeError as err:
+            raise NotFittedError("You have to calculate th feature wise distance matrix first!") from err
+
+        num_features = distance_matrix.shape[2]
     
         assinged_cluster_list = []
         fb_distance_to_assinged_cluster_list = []
@@ -57,7 +74,7 @@ class Xkm:
         fb_distance_to_best_alternative_list = []
     
         #for every obs:
-        for idx, e in enumerate(self.feature_wise_distance_matrix):
+        for idx, e in enumerate(distance_matrix):
             #index of assinged cluster
             assigned_cluster = self.predictions[idx]
             #feature-wise distances of point to assigned cluster
@@ -93,14 +110,16 @@ class Xkm:
             best_alterantive_list.append(temp_idx)
             fb_distance_to_best_alternative_list.append(temp_bad)     
             
-        self.ac ,self.fb_ac ,self.ba, self.fb_ba = np.array(assinged_cluster_list), np.array(fb_distance_to_assinged_cluster_list), np.array(best_alterantive_list), np.array(fb_distance_to_best_alternative_list)
+        return np.array(fb_distance_to_assinged_cluster_list), np.array(fb_distance_to_best_alternative_list)
     
-    def _calculate_pointwise_relevance(self):
-        self.pointwise_scores = (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)   # type: ignore
+    def _calculate_pointwise_relevance(self) -> pd.DataFrame:
+        self._check_fitted()
+        return (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)   # type: ignore
 
-    def _calculate_cluster_relevance(self):
-        num_features = self.pointwise_scores.shape[1]
-        self.cluster_relevances =  (pd.DataFrame(self.pointwise_scores)
+    def _calculate_cluster_relevance(self, pointwise_scores: NDArray) -> pd.DataFrame:
+        self._check_fitted()
+        num_features = pointwise_scores.shape[1]
+        return (pd.DataFrame(pointwise_scores)
                 .rename({index_:f"R{index_ + 1}"
                         for index_ 
                         in range(num_features)},
@@ -110,13 +129,44 @@ class Xkm:
                 .groupby(["assigned_clusters"])
                 .mean())
 
-    def _calculate_global_relevance(self):
-        self.global_relevances = {f"R_global_{i}": np.sum(self.pointwise_scores[:,i]) / len(self.pointwise_scores)
-                                  for i in range(self.pointwise_scores.shape[1])} 
+    def _calculate_global_relevance(self, pointwise_scores: NDArray) -> pd.DataFrame:
+        self._check_fitted()
+        return pd.DataFrame({f"R_global_{i}": np.sum(pointwise_scores[:,i]) / len(pointwise_scores)
+                                  for i in range(pointwise_scores.shape[1])}) 
         
     def explain(self):
-        self._calculate_feature_wise_distance_matrix()
-        self._best_calc()
-        self._calculate_pointwise_relevance()
-        self._calculate_cluster_relevance()
-        self._calculate_global_relevance()
+
+        if not self.is_fitted:
+            self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
+            self.fb_ac , self.fb_ba = self._best_calc()
+            self.is_fitted = True
+
+        pointwise_relevance = self._calculate_pointwise_relevance()
+        cluster_relevance = self._calculate_cluster_relevance()
+        global_relevance = self._calculate_global_relevance()
+
+        return ExplainedClustering(pointwise_relevance=pointwise_relevance,
+                                   cluster_relevance=cluster_relevance,
+                                   global_relevance=global_relevance)
+
+    def _check_fitted(self):
+        if not self.is_fitted:
+            raise NotFittedError("You have to calculate the feature wise distance matrix and the best alternative"
+            " and the best alternative distances first!")
+
+
+@dataclass()
+class ExplainedClustering:
+    pointwise_relevance: pd.DataFrame
+    cluster_relevance: pd.DataFrame
+    global_relevance: pd.DataFrame
+
+    # TODO
+    def show_point_wise_relevance(self):
+        pass 
+
+    def show_cluster_relevance(self):
+        pass
+
+    def show_global_relevance(self):
+        pass
