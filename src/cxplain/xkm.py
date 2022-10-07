@@ -12,16 +12,38 @@ from nptyping.typing_ import Floating, Int
 from cxplain.errors import NotFittedError
 from cxplain.metrics import get_distance_metric
 
-# TODO: - Refactoring abschließen
-#       - Write tests
-#       - refactor best calc
-#       - test functionality after refactor
-#       - Write docstrings
+# TODO: - Write docstrings
 #       - Write Docs
 #       - CICD pipeline Github Actions
 #       - sphinx Doku einfügen
 #       - 
 
+@dataclass()
+class ExplainedClustering:
+    pointwise_relevance: pd.DataFrame
+    cluster_relevance: pd.DataFrame
+    global_relevance: pd.Series
+    # TODO
+    
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ExplainedClustering):
+            return False
+        
+        pointwise_equal = np.all(np.isclose(self.pointwise_relevance.values, other.pointwise_relevance.values))
+        cluster_equal = np.all(np.isclose(self.cluster_relevance.values, other.cluster_relevance.values))
+        global_equal = np.all(np.isclose(self.global_relevance.values, other.global_relevance.values))
+        return pointwise_equal and cluster_equal and global_equal
+    
+    def show_point_wise_relevance(self):
+        pass 
+
+    def show_cluster_relevance(self):
+        pass
+
+    def show_global_relevance(self):
+        pass
+    
+    
 class Xkm:
 
     "eXplainable k-medoids"
@@ -37,6 +59,7 @@ class Xkm:
         self.predictions = cluster_predictions
         self.feature_wise_distance_matrix = None
         self.is_fitted = False
+        self.num_features = self.data.shape[1]
         
     
     def _calculate_feature_wise_distance_matrix(self
@@ -96,15 +119,17 @@ class Xkm:
             
                 # best alternative: 
                 best_alternative_distance = min(obs_distance_matrix[:,i]) # minimum distance to cluster
+                max_distance = max(obs_distance_matrix[:,i])
                 x = obs_distance_matrix[:,i].tolist() # nur um index zu bekommen --> zu welchen cluster gehört es
                 idx_best_alternative = x.index(best_alternative_distance) # welches cluster
             
             
                 #if the best alternative is the assigned cluster, we have to find the second best alternative
                 if idx_best_alternative == assigned_cluster:
-                
-                    del x[idx_best_alternative] # lösche beste alternative -- index verändert sich --> schlecht!! -> adddiere maximum
-                    best_alternative_distance = min(x) # hole 
+                    
+                    # ensure second closest cluster is chosen as new min
+                    x[idx_best_alternative] =  x[idx_best_alternative] + max_distance  
+                    best_alternative_distance = min(x) 
                     idx_best_alternative = x.index(best_alternative_distance)
                     
                 temp_bad.append(best_alternative_distance)
@@ -115,35 +140,45 @@ class Xkm:
             
         return np.array(fb_distance_to_assinged_cluster_list), np.array(fb_distance_to_best_alternative_list)
     
+    def _check_fitted(self):
+        if not self.is_fitted:
+            raise NotFittedError("You have to calculate the feature wise distance matrix and the best alternative"
+            " and the best alternative distances first!")
+   
     def _calculate_pointwise_relevance(self) -> pd.DataFrame:
         self._check_fitted()
-        return (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)   # type: ignore
+        pointwise_scores = (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)  # type: ignore
+        return (pd.DataFrame(pointwise_scores)
+                .pipe(self._rename_feature_columns, self.num_features))
 
     def _calculate_cluster_relevance(self, pointwise_scores: NDArray) -> pd.DataFrame:
         self._check_fitted()
-        num_features = pointwise_scores.shape[1]
         return (pd.DataFrame(pointwise_scores)
-                .rename({index_:f"R{index_ + 1}"
-                        for index_ 
-                        in range(num_features)},
-                                    axis=1
-                        )
+                .pipe(self._rename_feature_columns, self.num_features)
                 .assign(assigned_clusters=self.predictions)
                 .groupby(["assigned_clusters"])
                 .mean())
 
     def _calculate_global_relevance(self, pointwise_scores: NDArray) -> pd.Series:
         self._check_fitted()
-        return pd.Series({f"R_global_{i}": np.sum(pointwise_scores[:,i]) / len(pointwise_scores)
-                                  for i in range(pointwise_scores.shape[1])}) 
+        return pointwise_scores.mean()
         
-    def explain(self):
-
+    @staticmethod
+    def _rename_feature_columns(df: pd.DataFrame, num_features: int) -> pd.DataFrame:
+        return df.rename({index_:f"R{index_ + 1}"
+                          for index_ 
+                          in range(num_features)},
+                         axis=1
+                         )
+    
+    def fit(self):
         if not self.is_fitted:
             self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
-            self.fb_ac , self.fb_ba = self._best_calc()
+            self.fb_ac , self.fb_ba = self._best_calc() # TODO this is very hard to test...
             self.is_fitted = True
-
+    
+    def explain(self) -> ExplainedClustering:
+        self._check_fitted() 
         pointwise_relevance = self._calculate_pointwise_relevance()
         cluster_relevance = self._calculate_cluster_relevance(pointwise_scores=pointwise_relevance)
         global_relevance = self._calculate_global_relevance(pointwise_scores=pointwise_relevance)
@@ -152,24 +187,7 @@ class Xkm:
                                    cluster_relevance=cluster_relevance,
                                    global_relevance=global_relevance)
 
-    def _check_fitted(self):
-        if not self.is_fitted:
-            raise NotFittedError("You have to calculate the feature wise distance matrix and the best alternative"
-            " and the best alternative distances first!")
+    def fit_explain(self) -> ExplainedClustering:
+        self.fit()
+        return self.explain()
 
-
-@dataclass()
-class ExplainedClustering:
-    pointwise_relevance: pd.DataFrame
-    cluster_relevance: pd.DataFrame
-    global_relevance: pd.DataFrame
-
-    # TODO
-    def show_point_wise_relevance(self):
-        pass 
-
-    def show_cluster_relevance(self):
-        pass
-
-    def show_global_relevance(self):
-        pass
