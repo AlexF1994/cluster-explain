@@ -7,8 +7,9 @@ from cxplain.errors import MetricNotImplementedError
 
 
 class Metric(ABC):
-    @abstractmethod
+    
     @staticmethod
+    @abstractmethod
     def calculate(x: NDArray, y: NDArray):
         """
         Abstract method to caclculate the distance between x and y.

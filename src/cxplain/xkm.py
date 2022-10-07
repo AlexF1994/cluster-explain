@@ -1,15 +1,16 @@
 from dataclasses import dataclass
 from turtle import Shape
-from typing import Any, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 import numpy as np
 import pandas as pd
-from errors import NotFittedError
-from metrics import get_distance_metric
-from nptyping import NDArray
+from nptyping import NDArray, Shape
 from nptyping.typing_ import Floating, Int
+
+from cxplain.errors import NotFittedError
+from cxplain.metrics import get_distance_metric
 
 # TODO: - Refactoring abschließen
 #       - Write tests
@@ -18,15 +19,17 @@ from nptyping.typing_ import Floating, Int
 #       - Write docstrings
 #       - Write Docs
 #       - CICD pipeline Github Actions
+#       - sphinx Doku einfügen
+#       - 
 
 class Xkm:
 
     "eXplainable k-medoids"
     
-    def __init__(self, data: NDArray[Shape["num_obs, num_features"], Floating], 
-                 cluster_centers: NDArray[Shape["num_clusters, num_features"], Floating],
+    def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
+                 cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
                  distance_metric: str, 
-                 cluster_predictions: NDArray[Shape["num_obs"], Int]
+                 cluster_predictions: NDArray[Shape["* num_obs"], Int]
                  ):
         self.distance_metric = distance_metric
         self.cluster_centers = cluster_centers
@@ -37,7 +40,7 @@ class Xkm:
         
     
     def _calculate_feature_wise_distance_matrix(self
-        ) -> NDArray[Shape["num_obs, num_clusters, num_features"], Floating]:
+        ) -> NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating]:
         """
         Calculate feature-wise distance matrix of every feature of every observation to
         the corresponding feature coordinate of every cluster.
@@ -66,42 +69,42 @@ class Xkm:
             raise NotFittedError("You have to calculate th feature wise distance matrix first!") from err
 
         num_features = distance_matrix.shape[2]
+
+        assinged_cluster_list = [] # index des assigned cluster 
+        fb_distance_to_assinged_cluster_list = [] #fb feature based
     
-        assinged_cluster_list = []
-        fb_distance_to_assinged_cluster_list = []
-    
-        best_alterantive_list = []
+        best_alterantive_list = [] # index des next best cluster 
         fb_distance_to_best_alternative_list = []
     
         #for every obs:
-        for idx, e in enumerate(distance_matrix):
+        for idx, obs_distance_matrix in enumerate(distance_matrix): # e num_clusters x num_features
             #index of assinged cluster
-            assigned_cluster = self.predictions[idx]
+            assigned_cluster = self.predictions[idx] # für nte obs
             #feature-wise distances of point to assigned cluster
-            distances_to_assigned = e[assigned_cluster]
+            distances_to_assigned = obs_distance_matrix[assigned_cluster]
         
             assinged_cluster_list.append(assigned_cluster)
             fb_distance_to_assinged_cluster_list.append(distances_to_assigned)
         
             #find best alternative:
         
-            temp_bad = []
+            temp_bad = [] # best alternative distance
             temp_idx = []
         
             #for every feature
             for i in range(num_features):
             
                 # best alternative: 
-                best_alternative_distance = min(e[:,i])
-                x = e[:,i].tolist()
-                idx_best_alternative = x.index(best_alternative_distance)
+                best_alternative_distance = min(obs_distance_matrix[:,i]) # minimum distance to cluster
+                x = obs_distance_matrix[:,i].tolist() # nur um index zu bekommen --> zu welchen cluster gehört es
+                idx_best_alternative = x.index(best_alternative_distance) # welches cluster
             
             
                 #if the best alternative is the assigned cluster, we have to find the second best alternative
                 if idx_best_alternative == assigned_cluster:
                 
-                    del x[idx_best_alternative]
-                    best_alternative_distance = min(x)
+                    del x[idx_best_alternative] # lösche beste alternative -- index verändert sich --> schlecht!! -> adddiere maximum
+                    best_alternative_distance = min(x) # hole 
                     idx_best_alternative = x.index(best_alternative_distance)
                     
                 temp_bad.append(best_alternative_distance)
@@ -129,9 +132,9 @@ class Xkm:
                 .groupby(["assigned_clusters"])
                 .mean())
 
-    def _calculate_global_relevance(self, pointwise_scores: NDArray) -> pd.DataFrame:
+    def _calculate_global_relevance(self, pointwise_scores: NDArray) -> pd.Series:
         self._check_fitted()
-        return pd.DataFrame({f"R_global_{i}": np.sum(pointwise_scores[:,i]) / len(pointwise_scores)
+        return pd.Series({f"R_global_{i}": np.sum(pointwise_scores[:,i]) / len(pointwise_scores)
                                   for i in range(pointwise_scores.shape[1])}) 
         
     def explain(self):
@@ -142,8 +145,8 @@ class Xkm:
             self.is_fitted = True
 
         pointwise_relevance = self._calculate_pointwise_relevance()
-        cluster_relevance = self._calculate_cluster_relevance()
-        global_relevance = self._calculate_global_relevance()
+        cluster_relevance = self._calculate_cluster_relevance(pointwise_scores=pointwise_relevance)
+        global_relevance = self._calculate_global_relevance(pointwise_scores=pointwise_relevance)
 
         return ExplainedClustering(pointwise_relevance=pointwise_relevance,
                                    cluster_relevance=cluster_relevance,
