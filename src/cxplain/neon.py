@@ -109,7 +109,7 @@ class NeonKMeansExplainer(NeonExplainer):
         return pointwise_scores.mean()
         
     def _get_beta(self) -> float:
-        return mean([self.networks[index].output for index in range(self.data.shape[0])])          
+        return 1 / mean([self.networks[index].output for index in range(self.data.shape[0])])          
        
     def fit(self):
         if not self.is_fitted:
