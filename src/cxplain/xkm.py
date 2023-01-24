@@ -1,9 +1,3 @@
-from dataclasses import dataclass
-from turtle import Shape
-from typing import Any
-
-import matplotlib.pyplot as plt
-import mpl_toolkits.mplot3d
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Shape
@@ -31,7 +25,7 @@ class Xkm(BaseExplainer):
         self.distance_metric = distance_metric
         self.cluster_centers = cluster_centers
         self.data = data
-        self.predictions = cluster_predictions
+        self.cluster_predictions = cluster_predictions
         self.feature_wise_distance_matrix = None
         self.num_features = self.data.shape[1]
         
@@ -59,7 +53,7 @@ class Xkm(BaseExplainer):
     
         return np.array(feature_wise_distance_matrix)
     
-    def _best_calc(self) -> tuple[NDArray, NDArray]:
+    def _best_calc(self) -> tuple[NDArray, NDArray]: # TODO: needs refactoring
         try :
             distance_matrix = self.feature_wise_distance_matrix
         except AttributeError as err:
@@ -76,7 +70,7 @@ class Xkm(BaseExplainer):
         #for every obs:
         for idx, obs_distance_matrix in enumerate(distance_matrix): # e num_clusters x num_features
             #index of assinged cluster
-            assigned_cluster = self.predictions[idx] # für nte obs
+            assigned_cluster = self.cluster_predictions[idx] # für nte obs
             #feature-wise distances of point to assigned cluster
             distances_to_assigned = obs_distance_matrix[assigned_cluster]
         
@@ -114,7 +108,7 @@ class Xkm(BaseExplainer):
             
         return np.array(fb_distance_to_assinged_cluster_list), np.array(fb_distance_to_best_alternative_list)
    
-    def _calculate_pointwise_relevance(self) -> pd.DataFrame:
+    def _calculate_pointwise_relevance(self) -> pd.DataFrame: # TODO: needs refactoring
         self._check_fitted()
         pointwise_scores = (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)  # type: ignore
         return (pd.DataFrame(pointwise_scores)
@@ -124,7 +118,7 @@ class Xkm(BaseExplainer):
         self._check_fitted()
         return (pointwise_scores
                 .pipe(self._rename_feature_columns, self.num_features)
-                .assign(assigned_clusters=self.predictions)
+                .assign(assigned_clusters=self.cluster_predictions)
                 .groupby(["assigned_clusters"])
                 .mean())
 
@@ -135,7 +129,7 @@ class Xkm(BaseExplainer):
     def fit(self):
         if not self.is_fitted:
             self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
-            self.fb_ac , self.fb_ba = self._best_calc() # TODO this is very hard to test...
+            self.fb_ac , self.fb_ba = self._best_calc() # TODO this is very hard to test... --> needs refactoring
             self.is_fitted = True
     
     def explain(self) -> ExplainedClustering:
