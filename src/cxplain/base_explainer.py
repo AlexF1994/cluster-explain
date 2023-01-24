@@ -5,7 +5,7 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 
-from cxplain.errors import NotFittedError, NonExistingRelevanceError
+from cxplain.errors import NonExistingRelevanceError, NotFittedError
 
 # TODO incorporate feature names in relevance output 
 # TODO support for different data types (categorical)
