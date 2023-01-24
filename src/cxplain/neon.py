@@ -75,7 +75,7 @@ class KMeansNetwork:
             raise NotFittedError("You have to conduct a forward pass first!")
     
     
-class NeonKMeansExplainer(NeonExplainer):
+class NeonKMeansExplainer(NeonExplainer):  # TODO: Maybe use factory method for different Neon Exlpainers 
     
     def _init_network(self, index_observation: int) -> KMeansNetwork:
         index_actual = self.predictions[index_observation]
