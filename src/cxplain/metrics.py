@@ -5,6 +5,8 @@ from nptyping import NDArray
 
 from cxplain.errors import MetricNotImplementedError
 
+## TODO: evaluate if numpy functionality for metric calculation is better
+
 
 class Metric(ABC):
     

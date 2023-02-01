@@ -116,6 +116,7 @@ class NeonKMeansExplainer(NeonExplainer):  # TODO: Maybe use factory method for 
             for index, observation in enumerate(self.data):
                 self.networks.append(self._init_network(index).forward(observation))
             self.is_fitted = True
+        return self
 
     def explain(self) -> ExplainedClustering:
         self._check_fitted() 

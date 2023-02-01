@@ -132,6 +132,7 @@ class Xkm(BaseExplainer):
             self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
             self.fb_ac , self.fb_ba = self._best_calc() # TODO this is very hard to test... --> needs refactoring
             self.is_fitted = True
+        return self
     
     def explain(self) -> ExplainedClustering:
         self._check_fitted() 

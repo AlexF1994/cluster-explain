@@ -26,6 +26,7 @@ class ShapExplainer(BaseExplainer):
         self.forest.fit(self.data, self.cluster_predictions)
         self.is_fitted = True
         self.explainer = TreeExplainer(self.forest)
+        return self
         
     def _calculate_pointwise_relevance(self) -> pd.DataFrame: 
         self._check_fitted()

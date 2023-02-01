@@ -28,7 +28,7 @@ class GradientExplainer(BaseExplainer):
         self.is_fitted = True
         
     def fit(self):
-        pass
+        return self
         
     def _calculate_pointwise_relevance(self) -> pd.DataFrame: 
         self._check_fitted()

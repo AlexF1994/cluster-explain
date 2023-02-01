@@ -10,7 +10,6 @@ from sklearn.cluster import KMeans
 from sklearn.utils.validation import check_is_fitted
 
 from cxplain.base_explainer import BaseExplainer, ExplainedClustering
-from cxplain.errors import NotFittedError
 
 class DecisionTreeExplainer(BaseExplainer):
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
@@ -26,6 +25,7 @@ class DecisionTreeExplainer(BaseExplainer):
     def fit(self):
         self.tree.fit(self.data, self.cluster_predictions)
         self.is_fitted = True
+        return self
     
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.tree.tree_.compute_feature_importances(normalize=False)
@@ -52,6 +52,7 @@ class RandomForestExplainer(BaseExplainer):
     def fit(self):
         self.forest.fit(self.data, self.cluster_predictions)
         self.is_fitted = True
+        return self
     
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.forest.feature_importances_
@@ -79,6 +80,7 @@ class ExKMCExplainer(BaseExplainer):
         check_is_fitted(self.kmeans)
         self.tree.fit(self.data, self.kmeans)
         self.is_fitted = True
+        return self
         
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.tree._feature_importance 
