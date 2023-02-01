@@ -11,6 +11,7 @@ from cxplain.metrics import get_distance_metric
 #       - Write Docs
 #       - CICD pipeline Github Actions
 #       - sphinx Doku einfügen
+#       - fit hast to return self!!
     
 class Xkm(BaseExplainer):
 
