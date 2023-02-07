@@ -39,9 +39,9 @@ def expected_explanation():
                                        columns=col_names)
     global_relevance = pd.Series(np.array([0.2, 1. , 1. , 1. ]),
                                        index=col_names)
-    return ExplainedClustering(pointwise_relevance,
-                               cluster_relevance,
-                               global_relevance)
+    return ExplainedClustering(pointwise_relevance=pointwise_relevance,
+                               cluster_relevance=cluster_relevance,
+                               global_relevance=global_relevance)
 
 
 def test__calculate_feature_wise_distance_matrix(xkm):

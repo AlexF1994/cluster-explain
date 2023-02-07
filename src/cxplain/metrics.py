@@ -5,6 +5,8 @@ from nptyping import NDArray
 
 from cxplain.errors import MetricNotImplementedError
 
+## TODO: evaluate if numpy functionality for metric calculation is better
+
 
 class Metric(ABC):
     
@@ -17,6 +19,18 @@ class Metric(ABC):
         Args:
             x (NDArray): Input to distance calculation.
             y (NDArray): Input to distance calculation.
+        """
+        pass
+    
+    @staticmethod
+    @abstractmethod
+    def calculate_gradient(x: NDArray, y: NDArray):
+        """
+        Abstract method to caclculate the gradient of the metric.
+
+        Args:
+            x (NDArray): Input to metric calculation.
+            y (NDArray): Input to metric calculation.
         """
         pass
 
@@ -34,6 +48,10 @@ class ManhattenMetric(Metric):
             NDArray: Pointwise Manhatten distance.
         """
         return abs(x - y)
+    
+    @staticmethod
+    def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
+        return (x -y) / abs(x - y)
 
 class EuclideanMetric(Metric):
     @staticmethod
@@ -49,6 +67,10 @@ class EuclideanMetric(Metric):
             NDArray: Pointwise Euclidean distance. 
         """
         return (x - y)**2
+    
+    @staticmethod
+    def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
+        return 2 * (x - y)
         
 
 def get_distance_metric(metric_name: str) -> Type[Metric]:
