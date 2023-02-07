@@ -1,34 +1,42 @@
+from abc import ABC, abstractmethod
+from typing import List, Optional
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Shape
 from nptyping.typing_ import Floating, Int
 
 from cxplain.base_explainer import BaseExplainer, ExplainedClustering
-from cxplain.errors import NotFittedError
+from cxplain.errors import NonExsitingXkmFlavourError, NotFittedError
 from cxplain.metrics import get_distance_metric
 
 # TODO: - Write docstrings
 #       - Write Docs
 #       - CICD pipeline Github Actions
 #       - sphinx Doku einfügen
-#       - fit hast to return self!!
-    
-class Xkm(BaseExplainer):
+#       - feature_names bei allen explainern hinzufügen
+#       - DataFrame als Input zulassen bei allen Explainern
+
+
+class XkmExplainer(BaseExplainer):
 
     "eXplainable k-medoids"
     
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
+                 flavour: str, 
                  distance_metric: str, 
-                 cluster_predictions: NDArray[Shape["* num_obs"], Int]
+                 cluster_predictions: NDArray[Shape["* num_obs"], Int],
+                 feature_names: Optional[List[str]] = None,
                  ):
         super().__init__()
         self.distance_metric = distance_metric
         self.cluster_centers = cluster_centers
+        self.flavour = _get_xkm_flavour(flavour) 
         self.data = data
         self.cluster_predictions = cluster_predictions
         self.feature_wise_distance_matrix = None
         self.num_features = self.data.shape[1]
+        self.feature_names = feature_names
         
     
     def _calculate_feature_wise_distance_matrix(self
@@ -54,16 +62,69 @@ class Xkm(BaseExplainer):
     
         return np.array(feature_wise_distance_matrix)
     
-    def _best_calc(self) -> tuple[NDArray, NDArray]: # TODO: needs refactoring
-        try :
-            distance_matrix = self.feature_wise_distance_matrix
-        except AttributeError as err:
-            raise NotFittedError("You have to calculate th feature wise distance matrix first!") from err
+    def _calculate_pointwise_relevance(self) -> pd.DataFrame:
+        pointwise_scores = (self.flavour._calculate_pointwise_relevance(self.feature_wise_distance_matrix, 
+                                                                        self.cluster_predictions))
+        return pointwise_scores.pipe(self._rename_feature_columns, 
+                                     self.num_features, 
+                                     self.feature_names)
+    
+
+    def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
+        return (pointwise_scores
+                .assign(assigned_clusters=self.cluster_predictions)
+                .groupby(["assigned_clusters"])
+                .mean())
+
+    def _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
+        return pointwise_scores.mean()
+    
+    def fit(self):
+        if not self.is_fitted:
+            self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
+            self.is_fitted = True
+        return self
+    
+    def explain(self) -> ExplainedClustering:
+        self._check_fitted() 
+        pointwise_relevance = self._calculate_pointwise_relevance()
+        cluster_relevance = self._calculate_cluster_relevance(pointwise_scores=pointwise_relevance)
+        global_relevance = self._calculate_global_relevance(pointwise_scores=pointwise_relevance)  
+
+        return ExplainedClustering(pointwise_relevance=pointwise_relevance,
+                                   cluster_relevance=cluster_relevance,
+                                   global_relevance=global_relevance)
+
+
+def _get_xkm_flavour(flavour: str, **kwargs):
+    """Factory method for getting each flavour of Xkm."""
+    if flavour == "next_best":
+        return XkmNextBestFlavour()
+    if flavour == "all":
+        return XkmAllFlavour()
+    else:
+        raise NonExsitingXkmFlavourError(f"The flovour {flavour} doesn't exist.")
+    
+    
+class BaseXkmFlavour(ABC):
+    """Base class for different Xkm Falvours"""
+    
+    @abstractmethod
+    def _calculate_pointwise_relevance(cls) -> pd.DataFrame:
+        pass
+    
+class XkmNextBestFlavour:
+    @staticmethod
+    def _best_calc(feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
+                   cluster_predictions:  NDArray[Shape["* num_obs"], Int]
+                   ) -> tuple[NDArray, NDArray]: # TODO: needs refactoring
+        
+        distance_matrix = feature_wise_distance_matrix
 
         num_features = distance_matrix.shape[2]
 
         assinged_cluster_list = [] # index des assigned cluster 
-        fb_distance_to_assinged_cluster_list = [] #fb feature based
+        fb_distance_to_assinged_cluster_list = [] # fb feature based
     
         best_alterantive_list = [] # index des next best cluster 
         fb_distance_to_best_alternative_list = []
@@ -71,7 +132,7 @@ class Xkm(BaseExplainer):
         #for every obs:
         for idx, obs_distance_matrix in enumerate(distance_matrix): # e num_clusters x num_features
             #index of assinged cluster
-            assigned_cluster = self.cluster_predictions[idx] # für nte obs
+            assigned_cluster = cluster_predictions[idx] # für nte obs
             #feature-wise distances of point to assigned cluster
             distances_to_assigned = obs_distance_matrix[assigned_cluster]
         
@@ -108,40 +169,25 @@ class Xkm(BaseExplainer):
             fb_distance_to_best_alternative_list.append(temp_bad)     
             
         return np.array(fb_distance_to_assinged_cluster_list), np.array(fb_distance_to_best_alternative_list)
-   
-    def _calculate_pointwise_relevance(self) -> pd.DataFrame: # TODO: needs refactoring
-        self._check_fitted()
-        pointwise_scores = (self.fb_ba - self.fb_ac) / (self.fb_ba + self.fb_ac)  # type: ignore
-        return (pd.DataFrame(pointwise_scores)
-                .pipe(self._rename_feature_columns, self.num_features))
-
-    def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
-        self._check_fitted()
-        return (pointwise_scores
-                .pipe(self._rename_feature_columns, self.num_features)
-                .assign(assigned_clusters=self.cluster_predictions)
-                .groupby(["assigned_clusters"])
-                .mean())
-
-    def _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
-        self._check_fitted()
-        return pointwise_scores.mean()
     
-    def fit(self):
-        if not self.is_fitted:
-            self.feature_wise_distance_matrix = self._calculate_feature_wise_distance_matrix()
-            self.fb_ac , self.fb_ba = self._best_calc() # TODO this is very hard to test... --> needs refactoring
-            self.is_fitted = True
-        return self
-    
-    def explain(self) -> ExplainedClustering:
-        self._check_fitted() 
-        pointwise_relevance = self._calculate_pointwise_relevance()
-        cluster_relevance = self._calculate_cluster_relevance(pointwise_scores=pointwise_relevance)
-        global_relevance = self._calculate_global_relevance(pointwise_scores=pointwise_relevance)  
-
-        return ExplainedClustering(pointwise_relevance=pointwise_relevance,
-                                   cluster_relevance=cluster_relevance,
-                                   global_relevance=global_relevance)
-
-
+    def _calculate_pointwise_relevance(self, feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
+                                            cluster_predictions:  NDArray[Shape["* num_obs"], Int]) -> pd.DataFrame: # TODO: needs refactoring
+        fb_ac, fb_ba = self._best_calc(feature_wise_distance_matrix, cluster_predictions)
+        pointwise_scores = (fb_ba - fb_ac) / (fb_ba + fb_ac)  # type: ignore
+        return pd.DataFrame(pointwise_scores)
+                
+                
+class XkmAllFlavour:
+    def _calculate_pointwise_relevance(self, feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
+                                            cluster_predictions:  NDArray[Shape["* num_obs"], Int]) -> pd.DataFrame:
+        # sum up distances over cluster
+        complete_distances = np.sum(feature_wise_distance_matrix, axis=1)
+        # get distance to actual assigned cluster for every observation and feature
+        relevant_distances = [feature_wise_distance_matrix[i, cluster_predictions[i], :] 
+                         for i in range(feature_wise_distance_matrix.shape[0])]
+        actual_distances = np.vstack(relevant_distances) # TODO: make own utility function as also used in shap
+        # calculate relevance
+        n_clusters = feature_wise_distance_matrix.shape[1]
+        pointwise_scores = ((complete_distances - n_clusters * actual_distances) /
+                            complete_distances)
+        return pd.DataFrame(pointwise_scores)

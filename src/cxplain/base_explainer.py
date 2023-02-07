@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -135,8 +135,12 @@ class BaseExplainer(ABC):
             " and the best alternative distances first!")
             
     @staticmethod
-    def _rename_feature_columns(df: pd.DataFrame, num_features: int) -> pd.DataFrame:
-        return df.rename({index_:f"R{index_ + 1}"
+    def _rename_feature_columns(df: pd.DataFrame, 
+                                num_features: int, 
+                                feature_names: Optional[List[str]]) -> pd.DataFrame:
+        if feature_names:
+            assert num_features == len(feature_names)
+        return df.rename({index_: feature_names[index_] if feature_names else f"R{index_ + 1}"
                           for index_ 
                           in range(num_features)},
                          axis=1
