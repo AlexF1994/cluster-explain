@@ -137,7 +137,7 @@ class BaseExplainer(ABC):
     @staticmethod
     def _rename_feature_columns(df: pd.DataFrame, 
                                 num_features: int, 
-                                feature_names: Optional[List[str]]) -> pd.DataFrame:
+                                feature_names: Optional[List[str]] = None) -> pd.DataFrame:
         if feature_names:
             assert num_features == len(feature_names)
         return df.rename({index_: feature_names[index_] if feature_names else f"R{index_ + 1}"
