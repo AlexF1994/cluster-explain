@@ -1,3 +1,4 @@
+from typing import List, Optional
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from turtle import Shape
@@ -14,13 +15,15 @@ from cxplain.base_explainer import BaseExplainer, ExplainedClustering
 class DecisionTreeExplainer(BaseExplainer):
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_predictions: NDArray[Shape["* num_obs"], Int],
+                 feature_names: Optional[List[str]] = None,
                  **kwargs
                  ):
         super().__init__()
         self.data = data
         self.cluster_predictions = cluster_predictions
         self.tree = DecisionTreeClassifier(**kwargs)
-        self.num_features = self.data.shape[1]
+        self.num_features = self.data.shape[1],
+        self.feature_names = feature_names
         
     def fit(self):
         self.tree.fit(self.data, self.cluster_predictions)
@@ -30,7 +33,7 @@ class DecisionTreeExplainer(BaseExplainer):
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.tree.tree_.compute_feature_importances(normalize=False)
         return (pd.DataFrame(feature_importances).T
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     def explain(self) -> ExplainedClustering:
         self._check_fitted()
@@ -41,6 +44,7 @@ class DecisionTreeExplainer(BaseExplainer):
 class RandomForestExplainer(BaseExplainer):
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_predictions: NDArray[Shape["* num_obs"], Int],
+                 feature_names: Optional[List[str]] = None,
                  **kwargs
                  ):
         super().__init__()
@@ -48,6 +52,7 @@ class RandomForestExplainer(BaseExplainer):
         self.cluster_predictions = cluster_predictions
         self.forest = RandomForestClassifier(**kwargs)
         self.num_features = self.data.shape[1]
+        self.feature_names = feature_names
         
     def fit(self):
         self.forest.fit(self.data, self.cluster_predictions)
@@ -57,7 +62,7 @@ class RandomForestExplainer(BaseExplainer):
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.forest.feature_importances_
         return (pd.DataFrame(feature_importances).T
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     def explain(self) -> ExplainedClustering:
         self._check_fitted()
@@ -68,6 +73,7 @@ class RandomForestExplainer(BaseExplainer):
 class ExKMCExplainer(BaseExplainer):
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  kmeans_fitted: KMeans,
+                 feature_names: Optional[List[str]] = None,
                  **kwargs
                  ):
         super().__init__()
@@ -75,6 +81,7 @@ class ExKMCExplainer(BaseExplainer):
         self.kmeans = kmeans_fitted
         self.tree = Tree(**kwargs)
         self.num_features = self.data.shape[1]
+        self.feature_names = feature_names
     
     def fit(self):
         check_is_fitted(self.kmeans)
@@ -85,7 +92,7 @@ class ExKMCExplainer(BaseExplainer):
     def _calculate_global_relevance(self) -> pd.DataFrame:
         feature_importances = self.tree._feature_importance 
         return (pd.DataFrame(feature_importances).T
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     def explain(self) -> ExplainedClustering:
         self._check_fitted()

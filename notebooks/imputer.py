@@ -32,14 +32,15 @@ class NormalCKDEImputer:
         observation_list = []
         
         for obs_index in range(self.n_obs):
-            base_obs = self.data[obs_index, :]
-            nominator = sum([np.exp(-np.linalg.norm(np.subtract(base_obs, self.data[i, :]))**2 / (2 * variance_old))
-                             * np.linalg.norm(np.subtract(base_obs, self.data[i, :]))**2 
-                             for i in range(self.n_obs)
-                             if i != obs_index])
-            denominator = sum([np.exp(-np.linalg.norm(np.subtract(base_obs, self.data[i, :]))**2 / (2 * variance_old))
-                               for i in range(self.n_obs)
-                               if i != obs_index])
+            base_obs_arr = np.vstack([self.data[obs_index, :]] * self.data.shape[0])
+            nominator_raw =  (np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data), 
+                                                     axis=1)**2 / (2 * variance_old))
+                             * np.linalg.norm(np.subtract(base_obs_arr, self.data), axis=1)**2)
+            nominator = np.sum(nominator_raw) - nominator_raw[obs_index]
+            denominator_raw = np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data), 
+                                                     axis=1)**2 / (2 * variance_old))
+            denominator = np.sum(denominator_raw) - denominator_raw[obs_index]
+            
             observation_list.append(nominator / denominator)
             
         return update_weight * sum(observation_list)
@@ -53,6 +54,7 @@ class NormalCKDEImputer:
         return np.sum(differences >= self.epsilon) == 0
     
     def predict(self, feature_observation, index_obs = None):
+        epsilon = 0.0000001
         rng = np.random.default_rng()
         # convert feature observation to numpy array
         feature_obs_arr = np.array(feature_observation, copy=True)
@@ -62,15 +64,15 @@ class NormalCKDEImputer:
         index_impute = np.where(feature_obs_arr == 0) # I assume every obs to be imputed is 0
         # now calculate weights with only given indizes
         feature_obs_given = feature_obs_arr[index_given]
-        nominators = [np.exp(-np.linalg.norm(feature_obs_given - observation[index_given])**2 / (2 * self.variance))
-                      for observation in self.data]
-        denominators = []
-        for obs_index in range(self.n_obs):
-            denominator = [np.exp(-np.linalg.norm(feature_obs_given - self.data[i, :][index_given])**2 / (2 * self.variance))
-                           for i in range(self.n_obs)
-                           if i != obs_index]
-            denominators.append(sum(denominator))
-        weights = [nominator / denominator for nominator, denominator in zip(nominators, denominators)]
+        feature_obs_given_arr = np.vstack([feature_obs_given] * self.data.shape[0])
+        nominators = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given], 
+                                                                                   feature_obs_given_arr.shape), 
+                                                axis=1)**2 / (2 * self.variance))   
+        denominator = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given], 
+                                                                                   feature_obs_given_arr.shape), 
+                                                 axis=1)**2 / (2 * self.variance))
+        denominators = np.array([np.sum(denominator)] * self.data.shape[0]) - denominator
+        weights = nominators / (denominators + epsilon)
         # sample index i  from weights distribution
         distribution_index = random.choices(list(range(self.n_obs)), weights=weights, k=1)[0]
         # sample from normal distribution i
@@ -116,7 +118,7 @@ class EmpiricalRandomImputer:
     
     
 def get_imputer(imputer_name):
-    return NormalCKDEImputer if imputer_name == "normal" else EmpiricalRandomImputer
+    return NormalCKDEImputer if imputer_name == "ckde" else EmpiricalRandomImputer
     
     
         

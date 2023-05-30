@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from cxplain.errors import NonExistingRelevanceError, NotFittedError
+from cxplain.errors import InconsistentNamingError, NonExistingRelevanceError, NotFittedError
 
 # TODO incorporate feature names in relevance output 
 # TODO support for different data types (categorical)
@@ -139,7 +139,8 @@ class BaseExplainer(ABC):
                                 num_features: int, 
                                 feature_names: Optional[List[str]] = None) -> pd.DataFrame:
         if feature_names:
-            assert num_features == len(feature_names)
+            if not num_features == len(feature_names):
+                raise InconsistentNamingError
         return df.rename({index_: feature_names[index_] if feature_names else f"R{index_ + 1}"
                           for index_ 
                           in range(num_features)},
