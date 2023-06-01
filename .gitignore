@@ -65,6 +65,9 @@ venv*/
 .idea/
 *.iws
 
+#mypy stuff
+.mypy_cache
+
 # project-specific stuff
 # exclude data from source control (but keep the folder)
 data/*

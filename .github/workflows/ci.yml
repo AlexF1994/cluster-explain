@@ -1,0 +1,86 @@
+# inspired by https://jacobian.org/til/github-actions-poetry/
+
+name: Python package
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.8"
+  POETRY_VERSION: "1.4.2"
+  POETRY_URL: https://install.python-poetry.org
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        id: setup_python
+
+      - name: cache poetry install
+        uses: actions/cache@v2
+        with:
+          path: ~/.local
+          key: poetry-${{ env.POETRY_VERSION }}
+
+      - uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+      
+      - name: cache deps
+        id: cache-deps
+        uses: actions/cache@v2
+        with:
+          path: .venv
+          key: pydeps-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install --no-interaction --no-root
+        if: steps.cache-deps.outputs.cache-hit != 'true'
+
+      - name: Install package
+        run: |
+          poetry install --no-interaction
+
+      - name: Test with pytest
+        run: |
+          poetry run pytest tests --doctest-modules --junitxml=junit/test-results-${{ env.python-version }}.xml --cov=cxplain --cov-report=xml:reports/coverage.xml --cov-report=html:reports/coverage.html
+
+      - name: Upload pytest test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: pytest-results-${{ env.python-version }}
+          path: junit/test-results-${{ env.python-version }}.xml
+        if: ${{ always() }}
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-xml
+          path: reports/coverage.xml
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: coverage-html
+          path: reports/coverage.html
+
+      - name: Lint with ruff
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          ruff --format=github --select=E9,F63,F7,F82 --target-version=py38 .
+          # default set of ruff rules with GitHub Annotations
+          ruff --format=github --target-version=py38 .
