@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from statistics import mean
-from typing import Optional
+from typing import List, Optional
 
 import numpy as np
 import pandas as pd
@@ -14,13 +14,15 @@ from cxplain.errors import NotFittedError
 class NeonExplainer(BaseExplainer, ABC):
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
-                 predictions: NDArray[Shape["* num_obs"], Int]
+                 predictions: NDArray[Shape["* num_obs"], Int],
+                 feature_names: Optional[List[str]] = None,
                  ):
         super().__init__()
         self.cluster_centers = cluster_centers
         self.num_clusters = self.cluster_centers.shape[0]
         self.data = data
         self.predictions = predictions
+        self.feature_names = feature_names
         self.num_features = self.data.shape[1]
         self.networks = []
         
@@ -94,7 +96,7 @@ class NeonKMeansExplainer(NeonExplainer):  # TODO: Maybe use factory method for 
         relevances = [self.networks[index].backward(observation, beta) 
                       for index , observation in enumerate(self.data)]
         return (pd.DataFrame(np.row_stack(relevances))
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame: # TODO: average decorator
         self._check_fitted()

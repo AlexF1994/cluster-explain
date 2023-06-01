@@ -17,6 +17,7 @@ from cxplain.metrics import get_distance_metric
 #       - DataFrame als Input zulassen bei allen Explainern
 
 
+
 class XkmExplainer(BaseExplainer):
 
     "eXplainable k-medoids"
@@ -113,7 +114,7 @@ class BaseXkmFlavour(ABC):
     def _calculate_pointwise_relevance(cls) -> pd.DataFrame:
         pass
     
-class XkmNextBestFlavour:
+class XkmNextBestFlavour(BaseXkmFlavour):
     @staticmethod
     def _best_calc(feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
                    cluster_predictions:  NDArray[Shape["* num_obs"], Int]
@@ -177,7 +178,7 @@ class XkmNextBestFlavour:
         return pd.DataFrame(pointwise_scores)
                 
                 
-class XkmAllFlavour:
+class XkmAllFlavour(BaseXkmFlavour):
     def _calculate_pointwise_relevance(self, feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
                                             cluster_predictions:  NDArray[Shape["* num_obs"], Int]) -> pd.DataFrame:
         # sum up distances over cluster

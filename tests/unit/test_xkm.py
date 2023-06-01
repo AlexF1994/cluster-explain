@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from cxplain.xkm import ExplainedClustering, NotFittedError, Xkm
+from cxplain.xkm import ExplainedClustering, NotFittedError, XkmExplainer
 
 
 @pytest.fixture()
@@ -22,10 +22,11 @@ def predictions():
 
 @pytest.fixture()
 def xkm(data, cluster_centers, predictions):
-    return Xkm(data=data,
-               cluster_centers=cluster_centers,
-               distance_metric="euclidean",
-               cluster_predictions=predictions)
+    return XkmExplainer(data=data,
+                        cluster_centers=cluster_centers,
+                        distance_metric="euclidean",
+                        flavour="next_best",
+                        cluster_predictions=predictions)
     
 @pytest.fixture()
 def expected_explanation():
@@ -55,7 +56,7 @@ def test__calculate_feature_wise_distance_matrix(xkm):
     np.testing.assert_allclose(expected_distance_matrix, actual_distance_matrix)
     
     
-def test__best_calc(xkm):
+def test__best_calc(xkm, predictions):
     expected = (np.array([[0.25, 0.  , 0.  , 0.  ],
                           [0.  , 0.  , 0.  , 0.  ],
                           [0.25, 0.  , 0.  , 0.  ]]),
@@ -63,7 +64,7 @@ def test__best_calc(xkm):
                           [0.25, 1.  , 1.  , 1.  ],
                           [0.  , 1.  , 1.  , 1.  ]]))
     xkm.feature_wise_distance_matrix = xkm._calculate_feature_wise_distance_matrix()
-    actual = xkm._best_calc()
+    actual = xkm.flavour._best_calc(xkm.feature_wise_distance_matrix, predictions)
     np.testing.assert_allclose(expected, actual)
     
     

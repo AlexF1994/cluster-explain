@@ -13,6 +13,7 @@ class ShapExplainer(BaseExplainer):
     
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_predictions: NDArray[Shape["* num_obs"], Int],
+                 feature_names: Optional[List[str]] = None,,
                  **kwargs
                  ):
         super().__init__()
@@ -21,6 +22,7 @@ class ShapExplainer(BaseExplainer):
         self.forest = RandomForestClassifier(**kwargs)
         self.num_features = self.data.shape[1]
         self.explainer = None
+        self.feature_names = feature_names
         
     def fit(self):
         self.forest.fit(self.data, self.cluster_predictions)
@@ -33,7 +35,7 @@ class ShapExplainer(BaseExplainer):
         shap_values = np.array(self.explainer.shap_values(self.data))
         relevant_shap_values = self._get_relevant_shap_values(shap_values, self.cluster_predictions)
         return (pd.DataFrame(relevant_shap_values)
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     @staticmethod
     def _get_relevant_shap_values(shap_values:  NDArray[Shape["* num_cluster, * num_obs, * num_features"], Floating],

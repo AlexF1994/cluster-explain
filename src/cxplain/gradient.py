@@ -1,4 +1,4 @@
-from typing import Optional, Type
+from typing import List, Optional, Type
 
 import pandas as pd
 import numpy as np
@@ -16,7 +16,8 @@ class GradientExplainer(BaseExplainer):
                  cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
                  cluster_predictions: NDArray[Shape["* num_obs"], Int],
                  metric: Optional[Type[Metric]] = None,
-                 enable_abs_calculation: bool =  True
+                 enable_abs_calculation: bool =  True,
+                 feature_names: Optional[List[str]] = None,
                  ):
         super().__init__()
         self.data = data
@@ -25,6 +26,7 @@ class GradientExplainer(BaseExplainer):
         self.metric = metric if metric else EuclideanMetric
         self.num_features = self.data.shape[1]
         self.enable_abs_calculation = enable_abs_calculation
+        self.feature_names = feature_names
         self.is_fitted = True
         
     def fit(self):
@@ -35,7 +37,7 @@ class GradientExplainer(BaseExplainer):
         relevant_cluster_centers = np.take(self.cluster_centers, self.cluster_predictions, axis=0)
         gradient_values = self.metric.calculate_gradient(self.data, relevant_cluster_centers)
         return (pd.DataFrame(gradient_values)
-                .pipe(self._rename_feature_columns, self.num_features))
+                .pipe(self._rename_feature_columns, self.num_features, self.feature_names))
         
     def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame: # TODO: duplicated code
         self._check_fitted()

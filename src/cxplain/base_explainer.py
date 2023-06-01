@@ -150,9 +150,9 @@ class ExplainedClustering:
         if not isinstance(other, ExplainedClustering):
             return False
         
-        pointwise_equal = (self.pointwise_relevance == other.pointwise_relevance) if self.pointwise_relevance else True
-        cluster_equal = (self.cluster_relevance == other.cluster_relevance) if self.cluster_relevance else True
-        global_equal = (self.global_relevance == other.global_relevance)
+        pointwise_equal = (self._pointwise_relevance == other._pointwise_relevance) if self._pointwise_relevance else True
+        cluster_equal = (self._cluster_relevance == other._cluster_relevance) if self._cluster_relevance else True
+        global_equal = (self._global_relevance == other._global_relevance)
         return pointwise_equal and cluster_equal and global_equal
         
     @property
