@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Shape
@@ -118,7 +118,7 @@ class XkmNextBestFlavour(BaseXkmFlavour):
     @staticmethod
     def _best_calc(feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
                    cluster_predictions:  NDArray[Shape["* num_obs"], Int]
-                   ) -> tuple[NDArray, NDArray]: # TODO: needs refactoring
+                   ) -> Tuple[NDArray, NDArray]: # TODO: needs refactoring
         
         distance_matrix = feature_wise_distance_matrix
 
