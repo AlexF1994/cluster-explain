@@ -1,3 +1,4 @@
+from typing import List, Optional
 import numpy as np
 import pandas as pd
 from nptyping import NDArray, Shape
@@ -13,7 +14,7 @@ class ShapExplainer(BaseExplainer):
     
     def __init__(self, data: NDArray[Shape["* num_obs, * num_features"], Floating], 
                  cluster_predictions: NDArray[Shape["* num_obs"], Int],
-                 feature_names: Optional[List[str]] = None,,
+                 feature_names: Optional[List[str]] = None,
                  **kwargs
                  ):
         super().__init__()
@@ -50,7 +51,6 @@ class ShapExplainer(BaseExplainer):
     def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame: # TODO: duplicated code
         self._check_fitted()
         return (pointwise_scores
-                .pipe(self._rename_feature_columns, self.num_features)
                 .assign(assigned_clusters=self.cluster_predictions)
                 .groupby(["assigned_clusters"])
                 .mean())

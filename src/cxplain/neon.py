@@ -101,7 +101,6 @@ class NeonKMeansExplainer(NeonExplainer):  # TODO: Maybe use factory method for 
     def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame: # TODO: average decorator
         self._check_fitted()
         return (pointwise_scores
-                .pipe(self._rename_feature_columns, self.num_features)
                 .assign(assigned_clusters=self.predictions)
                 .groupby(["assigned_clusters"])
                 .mean())

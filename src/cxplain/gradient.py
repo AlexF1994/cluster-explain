@@ -42,7 +42,6 @@ class GradientExplainer(BaseExplainer):
     def _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame: # TODO: duplicated code
         self._check_fitted()
         return (pointwise_scores
-                .pipe(self._rename_feature_columns, self.num_features)
                 .assign(assigned_clusters=self.cluster_predictions)
                 .pipe(self._calc_abs_value, self.enable_abs_calculation)
                 .groupby(["assigned_clusters"])
