@@ -1,6 +1,6 @@
 # inspired by https://jacobian.org/til/github-actions-poetry/
 
-name: Python package
+name: Test
 
 on:
   push:
@@ -15,7 +15,7 @@ env:
   POETRY_URL: https://install.python-poetry.org
 
 jobs:
-  build:
+  test-code:
 
     runs-on: ubuntu-latest
 
@@ -48,7 +48,9 @@ jobs:
           key: pydeps-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+        run: |
+          poetry config experimental.new-installer false
+          poetry install --no-interaction --no-root
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
       - name: Install package
