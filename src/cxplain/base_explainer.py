@@ -4,14 +4,25 @@ from typing import List, Optional, Union
 
 import numpy as np
 import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from cxplain.errors import InconsistentNamingError, NonExistingRelevanceError, NotFittedError
 
-# TODO incorporate feature names in relevance output 
+# TODO remove code duplication in plotting of relevance scores 
 # TODO support for different data types (categorical)
-    
 
-@dataclass()
+index_type = Optional[Union[str, List[str], List[int], pd.Index]]
+
+
+def color_mapping(value: float):
+    if value >= 0:
+        return "green" 
+    else:
+        return "red"
+
+
+@dataclass(frozen=True)
 class GlobalExplainedClustering:
     global_relevance: pd.Series
     
@@ -21,11 +32,19 @@ class GlobalExplainedClustering:
         global_equal = np.all(np.isclose(self.global_relevance.values, other.global_relevance.values))
         return global_equal
     
-    def show_global_relevance(self): # TODO
-        pass
+    def show_global_relevance(self):
+        global_df = pd.DataFrame(self.global_relevance).reset_index(drop=False)
+        sns.barplot(x=0, y="index", 
+            data=global_df, 
+            orient='h',
+            palette=[color_mapping(value) for value in self.global_relevance.values])
+        plt.xlabel('Feature importance')
+        plt.ylabel("Feature")
+        plt.title(f"Global feature importance")
+        plt.show()
     
     
-@dataclass()
+@dataclass(frozen=True)
 class ClusterExplainedClustering: 
     cluster_relevance: pd.DataFrame
     
@@ -35,11 +54,40 @@ class ClusterExplainedClustering:
         cluster_equal = np.all(np.isclose(self.cluster_relevance.values, other.cluster_relevance.values))
         return cluster_equal
     
-    def show_cluster_relevance(self): # TODO
-        pass
+    def show_cluster_relevance(self, subset_index: index_type = None): 
+        relevances_to_plot = self.cluster_relevance[subset_index] if subset_index else self.cluster_relevance
+        sns.heatmap(relevances_to_plot)
+        plt.title('Clusterwise feature importance scores')
+        plt.xlabel('Feature')
+        plt.ylabel('Cluster')
+        plt.show()
+    
+    def show_single_feature_relevance(self, feature: str, subset_index: index_type = None):
+        feature_importance = (self.cluster_relevance.loc[subset_index, [feature]] 
+                              if subset_index 
+                              else self.cluster_relevance[[feature]])
+        sns.barplot(x=feature, y="assigned_clusters", 
+                    data=feature_importance.reset_index(drop=False), 
+                    orient='h',
+                    palette=[color_mapping(value) for value in feature_importance.values])
+        plt.xlabel('Feature importance')
+        plt.ylabel("Cluster")
+        plt.title(f"Importance for feature: {feature}")
+        plt.show()
+        
+    def show_single_cluster_relevance(self, cluster_index: int):
+        observation_importance = self.cluster_relevance.loc[[cluster_index], :]
+        sns.barplot(x=1, y="index", 
+                    data=observation_importance.T.reset_index(drop=False), 
+                    orient='h',
+                    palette=[color_mapping(value) for value in observation_importance.iloc[0, :].values])
+        plt.xlabel('Feature importance')
+        plt.ylabel("Feature")
+        plt.title(f"Importance for Cluster: {cluster_index}")
+        plt.show() 
     
 
-@dataclass()
+@dataclass(frozen=True)
 class PointwiseExplainedClustering:
     pointwise_relevance: pd.DataFrame
     
@@ -49,8 +97,39 @@ class PointwiseExplainedClustering:
         pointwise_equal = np.all(np.isclose(self.pointwise_relevance.values, other.pointwise_relevance.values))
         return pointwise_equal
     
-    def show_pointwise_relevance(self): # TODO
-        pass
+    def show_pointwise_relevance(self, subset_index: index_type = None):
+        relevances_to_plot = (self.pointwise_relevance.loc[subset_index, :] 
+                              if subset_index else self.pointwise_relevance)
+        sns.heatmap(relevances_to_plot)
+        plt.title('Pointwise feature importance scores')
+        plt.xlabel('Feature')
+        plt.ylabel('Observation')
+        plt.show()
+        
+    def show_single_feature_relevance(self, feature: str, subset_index: index_type = None):
+        feature_importance = (self.pointwise_relevance.loc[subset_index, [feature]]
+                              if subset_index 
+                              else self.pointwise_relevance[[feature]] )
+        sns.barplot(x=feature, y="index", 
+                    data=feature_importance.reset_index(drop=False), 
+                    orient='h',
+                    palette=[color_mapping(value) for value in feature_importance.values])
+        plt.xlabel('Feature importance')
+        plt.ylabel("Observation")
+        plt.title(f"Importance for feature: {feature}")
+        plt.show()
+        
+    def show_single_observation_relevance(self, observation_index: int):
+        observation_importance = self.pointwise_relevance.loc[observation_index, :]
+        sns.barplot(x=1, y="index", 
+                    data=observation_importance.T.reset_index(drop=False), 
+                    orient='h',
+                    palette=[color_mapping(value) for value in observation_importance.values])
+        plt.xlabel('Feature importance')
+        plt.ylabel("Feature")
+        plt.title(f"Importance for observation: {observation_index}")
+        plt.show()
+    
  
  
 class ExplainedClustering:
@@ -98,14 +177,26 @@ class ExplainedClustering:
             or isinstance(relevance, ClusterExplainedClustering)):
             raise NonExistingRelevanceError("The specific relevance score doesn't exist for your explainer!")
 
-    def show_pointwise_relevance(self): 
-        self.pointwise_relevance.show_pointwise_relevance()
-
-    def show_cluster_relevance(self): 
-        self.cluster_relevance.show_cluster_relevance()
+    def show_pointwise_relevance(self, subset_index: index_type = None): 
+        self._pointwise_relevance.show_pointwise_relevance(subset_index)
+        
+    def show_pointwise_relevance_for_feature(self, feature: str, subset_index: index_type = None):
+        self._pointwise_relevance.show_single_feature_relevance(feature, subset_index)
+        
+    def show_pointwise_relevance_for_observation(self, observation_index: int):
+        self._pointwise_relevance.show_single_observation_relevance(observation_index)
+        
+    def show_cluster_relevance(self, subset_index: index_type = None): 
+        self._cluster_relevance.show_cluster_relevance(subset_index)
+        
+    def show_cluster_relevance_for_feature(self, feature: str, subset_index: index_type = None):
+        self._cluster_relevance.show_single_feature_relevance(feature, subset_index)  
+        
+    def show_cluster_relevance_for_cluster(self, cluster_index: int):
+        self._cluster_relevance.show_single_cluster_relevance(cluster_index)    
 
     def show_global_relevance(self):
-        self.global_relevance.show_global_relevance()
+        self._global_relevance.show_global_relevance()
 
 
 class BaseExplainer(ABC):
