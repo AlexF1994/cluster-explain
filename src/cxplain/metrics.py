@@ -9,7 +9,6 @@ from cxplain.errors import MetricNotImplementedError
 
 
 class Metric(ABC):
-    
     @staticmethod
     @abstractmethod
     def calculate(x: NDArray, y: NDArray):
@@ -21,7 +20,7 @@ class Metric(ABC):
             y (NDArray): Input to distance calculation.
         """
         pass
-    
+
     @staticmethod
     @abstractmethod
     def calculate_gradient(x: NDArray, y: NDArray):
@@ -34,11 +33,12 @@ class Metric(ABC):
         """
         pass
 
+
 class ManhattenMetric(Metric):
     @staticmethod
-    def calculate(x: NDArray, y: NDArray) -> NDArray: 
+    def calculate(x: NDArray, y: NDArray) -> NDArray:
         """
-        Calculate pointwise Manhatten distance between x and y. 
+        Calculate pointwise Manhatten distance between x and y.
 
         Args:
             x (NDArray): Input to distance calculation.
@@ -48,30 +48,31 @@ class ManhattenMetric(Metric):
             NDArray: Pointwise Manhatten distance.
         """
         return abs(x - y)
-    
+
     @staticmethod
     def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
-        return (x -y) / abs(x - y)
+        return (x - y) / abs(x - y)
+
 
 class EuclideanMetric(Metric):
     @staticmethod
     def calculate(x: NDArray, y: NDArray) -> NDArray:
         """
-        Calculate pointwise Euclidean distance between x and y. 
+        Calculate pointwise Euclidean distance between x and y.
 
         Args:
             x (NDArray): Input to distance calculation.
             y (NDArray): Input to distance calculation.
 
         Returns:
-            NDArray: Pointwise Euclidean distance. 
+            NDArray: Pointwise Euclidean distance.
         """
-        return (x - y)**2
-    
+        return (x - y) ** 2
+
     @staticmethod
     def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
         return 2 * (x - y)
-        
+
 
 def get_distance_metric(metric_name: str) -> Type[Metric]:
     """
@@ -88,11 +89,11 @@ def get_distance_metric(metric_name: str) -> Type[Metric]:
     """
     if metric_name == "manhattan":
         return ManhattenMetric()
-    
+
     if metric_name == "euclidean":
         return EuclideanMetric()
-    
+
     else:
-        raise MetricNotImplementedError(f"Your requested metric {metric_name} is not yet implemented!")
-
-
+        raise MetricNotImplementedError(
+            f"Your requested metric {metric_name} is not yet implemented!"
+        )
