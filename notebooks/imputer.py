@@ -1,6 +1,5 @@
 import numpy as np
 import random
-import pandas as pd
 
 class NormalCKDEImputer:
     def __init__(self, data):
@@ -10,12 +9,12 @@ class NormalCKDEImputer:
         self.variance = None
         self.n_obs = self.data.shape[0]
         self.n_features = self.data.shape[1]
-    
+
     def fit(self):
         counter = 0
         variance = 1
         variance_list =[variance]
-        
+
         while not self._is_converged(variance_list):
             variance_old = variance_list[-1]
             variance_new = self._update_variance(variance_old)
@@ -23,28 +22,28 @@ class NormalCKDEImputer:
             counter += 1
             if counter >= self.stopping_threshold:
                 break
-                
+
         self.variance = variance_list[-1]
         return self
-        
+
     def _update_variance(self, variance_old):
         update_weight = 1 / (self.n_obs * self.n_features)
         observation_list = []
-        
+
         for obs_index in range(self.n_obs):
             base_obs_arr = np.vstack([self.data[obs_index, :]] * self.data.shape[0])
-            nominator_raw =  (np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data), 
+            nominator_raw =  (np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data),
                                                      axis=1)**2 / (2 * variance_old))
                              * np.linalg.norm(np.subtract(base_obs_arr, self.data), axis=1)**2)
             nominator = np.sum(nominator_raw) - nominator_raw[obs_index]
-            denominator_raw = np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data), 
+            denominator_raw = np.exp(-np.linalg.norm(np.subtract(base_obs_arr, self.data),
                                                      axis=1)**2 / (2 * variance_old))
             denominator = np.sum(denominator_raw) - denominator_raw[obs_index]
-            
+
             observation_list.append(nominator / denominator)
-            
+
         return update_weight * sum(observation_list)
-    
+
     def _is_converged(self, variance_list):
         variance_history = 3
         if len(variance_list) < variance_history:
@@ -52,7 +51,7 @@ class NormalCKDEImputer:
         considered_elements = np.array(variance_list[-variance_history:])
         differences = np.diff(considered_elements)
         return np.sum(differences >= self.epsilon) == 0
-    
+
     def predict(self, feature_observation, index_obs = None):
         epsilon = 0.0000001
         rng = np.random.default_rng()
@@ -65,11 +64,11 @@ class NormalCKDEImputer:
         # now calculate weights with only given indizes
         feature_obs_given = feature_obs_arr[index_given]
         feature_obs_given_arr = np.vstack([feature_obs_given] * self.data.shape[0])
-        nominators = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given], 
-                                                                                   feature_obs_given_arr.shape), 
-                                                axis=1)**2 / (2 * self.variance))   
-        denominator = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given], 
-                                                                                   feature_obs_given_arr.shape), 
+        nominators = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given],
+                                                                                   feature_obs_given_arr.shape),
+                                                axis=1)**2 / (2 * self.variance))
+        denominator = np.exp(-np.linalg.norm(feature_obs_given_arr - np.reshape(self.data[:, index_given],
+                                                                                   feature_obs_given_arr.shape),
                                                  axis=1)**2 / (2 * self.variance))
         denominators = np.array([np.sum(denominator)] * self.data.shape[0]) - denominator
         weights = nominators / (denominators + epsilon)
@@ -86,15 +85,15 @@ class NormalCKDEImputer:
         # fill up observation with imputed features
         feature_obs_arr[index_impute] = sample
         return feature_obs_arr
-    
+
 
 class EmpiricalRandomImputer:
     def __init__(self, data):
         self.data = data
-        
+
     def fit(self):
         return self
-    
+
     def predict(self, feature_observation, index_obs = None):
         feature_obs_arr = np.array(feature_observation, copy=True)
         # calculate weights
@@ -115,13 +114,7 @@ class EmpiricalRandomImputer:
         #                    if column_index not in index_given]
         feature_obs_arr[index_impute] = imputed_features
         return feature_obs_arr
-    
-    
+
+
 def get_imputer(imputer_name):
     return NormalCKDEImputer if imputer_name == "ckde" else EmpiricalRandomImputer
-    
-    
-        
-    
-        
-        
