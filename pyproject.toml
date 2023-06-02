@@ -32,7 +32,7 @@ mypy = "^0.981"
 isort = "^5.10.1"
 ipykernel = "^6.16.0"
 ruff = "^0.0.270"
-pywin32 = "300"
+pywin32 = {version = "300", platform = "win32"}
 
 [tool.ruff]
 line-length = 120
