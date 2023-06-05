@@ -71,7 +71,7 @@ class ClusterExplainedClustering:
             if subset_index
             else self.cluster_relevance
         )
-        sns.heatmap(relevances_to_plot)
+        sns.heatmap(relevances_to_plot, center=0, cmap="RdYlGn")
         plt.title("Clusterwise feature importance scores")
         plt.xlabel("Feature")
         plt.ylabel("Cluster")
@@ -135,7 +135,7 @@ class PointwiseExplainedClustering:
             if subset_index
             else self.pointwise_relevance
         )
-        sns.heatmap(relevances_to_plot)
+        sns.heatmap(relevances_to_plot, center=0, cmap="RdYlGn")
         plt.title("Pointwise feature importance scores")
         plt.xlabel("Feature")
         plt.ylabel("Observation")
