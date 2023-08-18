@@ -73,3 +73,6 @@ venv*/
 data/*
 !data/.gitkeep
 notebooks/results_*
+*.pdf
+*.png
+*.jpeg
