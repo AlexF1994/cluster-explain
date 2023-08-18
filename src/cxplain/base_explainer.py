@@ -67,7 +67,7 @@ class ClusterExplainedClustering:
 
     def show_cluster_relevance(self, subset_index: index_type = None):
         relevances_to_plot = (
-            self.cluster_relevance[subset_index]
+            self.cluster_relevance.T[subset_index].T
             if subset_index
             else self.cluster_relevance
         )
@@ -100,7 +100,7 @@ class ClusterExplainedClustering:
     def show_single_cluster_relevance(self, cluster_index: int):
         observation_importance = self.cluster_relevance.loc[[cluster_index], :]
         sns.barplot(
-            x=1,
+            x=0,
             y="index",
             data=observation_importance.T.reset_index(drop=False),
             orient="h",
@@ -136,7 +136,7 @@ class PointwiseExplainedClustering:
             else self.pointwise_relevance
         )
         sns.heatmap(relevances_to_plot, center=0, cmap="RdYlGn")
-        plt.title("Pointwise feature importance scores")
+        plt.title("Point-wise feature importance scores")
         plt.xlabel("Feature")
         plt.ylabel("Observation")
         plt.show()
