@@ -45,11 +45,11 @@ class GlobalExplainedClustering:
     >>> import pandas as pd
 
     >>> # Create a GlobalExplainedClustering instance with global feature relevance
-    >>> global_relevance = pd.Series([0.3, 0.5, 0.2], index=["A", "B", "C"])
+    >>> global_relevance = pd.Series([0.3, 0.5, 0.2], index=["feature_A", "feature_B", "feature_C"])
     >>> global_explanation = GlobalExplainedClustering(global_relevance)
 
     >>> # Check if two instances of GlobalExplainedClustering are equal
-    >>> another_global_relevance = pd.Series([0.5, 0.5, 0.2], index=["A", "B", "C"])
+    >>> another_global_relevance = pd.Series([0.5, 0.5, 0.2], index=["feature_A", "feature_B", "feature_C"])
     >>> another_global_explanation = GlobalExplainedClustering(another_global_relevance)
     >>> global_explanation == another_global_explanation
         False
@@ -392,6 +392,88 @@ class PointwiseExplainedClustering:
 
 
 class ExplainedClustering:
+    """
+    This class is used to represent clustering explanations, including global, pointwise, and cluster feature relevance.
+
+    Attributes:
+        global_relevance (pd.Series): A Pandas Series containing global feature relevance scores.
+        pointwise_relevance (pd.DataFrame): Optional Pandas DataFrame containing pointwise feature relevance scores.
+        cluster_relevance (pd.DataFrame): Optional Pandas DataFrame containing cluster feature relevance scores.
+
+    Methods:
+        - __eq__(self, other: object) -> bool:
+            Checks if two instances of ExplainedClustering are equal.
+
+        - pointwise_relevance(self) -> Optional[PointwiseExplainedClustering]:
+            Returns the pointwise feature relevance, if available.
+
+        - cluster_relevance(self) -> Optional[ClusterExplainedClustering]:
+            Returns the cluster feature relevance, if available.
+
+        - global_relevance(self) -> GlobalExplainedClustering:
+            Returns the global feature relevance.
+
+        - pointwise_relevance_df(self) -> Optional[pd.DataFrame]:
+            Returns the pointwise feature relevance as a DataFrame, if available.
+
+        - cluster_relevance_df(self) -> Optional[pd.DataFrame]:
+            Returns the cluster feature relevance as a DataFrame, if available.
+
+        - global_relevance_df(self) -> pd.Series:
+            Returns the global feature relevance as a Series.
+
+        - show_pointwise_relevance(self, subset_index: Optional[list] = None):
+            Visualizes pointwise feature relevance using a heatmap.
+
+        - show_pointwise_relevance_for_feature(self, feature: str, subset_index: Optional[list] = None):
+            Visualizes feature importance scores for a single feature across observations using a bar plot.
+
+        - show_pointwise_relevance_for_observation(self, observation_index: int):
+            Visualizes feature importance scores for a single observation using a bar plot.
+
+        - show_cluster_relevance(self, subset_index: Optional[list] = None):
+            Visualizes cluster-wise feature relevance using a heatmap.
+
+        - show_cluster_relevance_for_feature(self, feature: str, subset_index: Optional[list] = None):
+            Visualizes feature importance scores for a single feature across clusters using a bar plot.
+
+        - show_cluster_relevance_for_cluster(self, cluster_index: int):
+            Visualizes feature importance scores for a single cluster using a bar plot.
+
+        - show_global_relevance(self):
+            Visualizes global feature relevance using a bar plot.
+
+    Example:
+    >>> # Create an ExplainedClustering instance with global and pointwise feature relevance
+    >>> global_relevance = pd.Series([0.3, 0.5, 0.2], index=["feature_A", "feature_B", "feature_C"])
+    >>> pointwise_relevance_data = pd.DataFrame({
+    ...     'feature_A': [0.3, 0.5, 0.2],
+    ...     'feature_B': [0.2, 0.4, 0.6],
+    ...     'feature_C': [0.4, 0.2, 0.5]
+    ... })
+    >>> explained_clustering = ExplainedClustering(global_relevance, pointwise_relevance_data)
+
+    >>> # Check if two instances of ExplainedClustering are equal
+    >>> another_global_relevance = pd.Series([0.4, 0.5, 0.2], index=["feature_A", "feature_B", "feature_C"])
+    >>> another_pointwise_relevance_data = pd.DataFrame({
+    ...     'feature_A': [0.4, 0.4, 0.2],
+    ...     'feature_B': [0.3, 0.3, 0.5],
+    ...     'feature_C': [0.2, 0.1, 0.6]
+    ... })
+    >>> another_explained_clustering = ExplainedClustering(another_global_relevance, another_pointwise_relevance_data)
+    >>> explained_clustering == another_explained_clustering
+        False
+
+    >>> # Visualize pointwise feature relevance
+    >>> explained_clustering.show_pointwise_relevance()
+
+    >>> # Visualize feature importance scores for a single feature across observations
+    >>> explained_clustering.show_pointwise_relevance_for_feature("feature_A")
+
+    >>> # Visualize feature importance scores for a single observation
+    >>> explained_clustering.show_pointwise_relevance_for_observation(2)
+    """
+
     def __init__(
         self,
         global_relevance: pd.Series,
@@ -457,41 +539,121 @@ class ExplainedClustering:
 
     @staticmethod
     def _check_relevance_exists(
-        relevance: Optional[
+        explained_clustering: Optional[
             Union[PointwiseExplainedClustering, ClusterExplainedClustering]
         ] = None
     ):
+        """
+        Check whether the provided clustering expalantion exists
+
+        Args:
+            explained_clustering (Optional[ Union[PointwiseExplainedClustering,
+                                  ClusterExplainedClustering] ], optional):
+                Explained clustering object, which should be checked to exist.
+
+        Raises:
+            NonExistingRelevanceError: Raised if provided explained clustering does not exist.
+        """
         if not (
-            isinstance(relevance, PointwiseExplainedClustering)
-            or isinstance(relevance, ClusterExplainedClustering)
+            isinstance(explained_clustering, PointwiseExplainedClustering)
+            or isinstance(explained_clustering, ClusterExplainedClustering)
         ):
             raise NonExistingRelevanceError(
                 "The specific relevance score doesn't exist for your explainer!"
             )
 
     def show_pointwise_relevance(self, subset_index: index_type = None):
+        """
+        Visualizes pointwise feature relevance using a heatmap.
+
+        Args:
+            subset_index (Optional[list]): Optional list of observation indices to subset the data.
+
+        Example:
+        >>> # Visualize pointwise feature relevance
+        >>> explained_clustering.show_pointwise_relevance([0, 1, 2])
+        """
         self.pointwise_relevance.show_pointwise_relevance(subset_index)  # type: ignore
 
     def show_pointwise_relevance_for_feature(
         self, feature: str, subset_index: index_type = None
     ):
+        """
+        Visualizes feature importance scores for a single feature across observations using a bar plot.
+
+        Args:
+            feature (str): The name of the feature.
+            subset_index (Optional[list]): Optional list of observation indices to subset the data.
+
+        Example:
+        >>> # Visualize feature importance scores for a single feature across observations
+        >>> explained_clustering.show_pointwise_relevance_for_feature("FeatureA", [0, 1, 2])
+        """
         self.pointwise_relevance.show_single_feature_relevance(feature, subset_index)  # type: ignore
 
     def show_pointwise_relevance_for_observation(self, observation_index: int):
+        """
+        Visualizes feature importance scores for a single observation using a bar plot.
+
+        Args:
+            observation_index (int): The index of the observation.
+
+        Example:
+        >>> # Visualize feature importance scores for a single observation
+        >>> explained_clustering.show_pointwise_relevance_for_observation(2)
+        """
         self.pointwise_relevance.show_single_observation_relevance(observation_index)  # type: ignore
 
     def show_cluster_relevance(self, subset_index: index_type = None):
+        """
+        Visualizes cluster-wise feature relevance using a heatmap.
+
+        Args:
+            subset_index (Optional[list]): Optional list of cluster indices to subset the data.
+
+        Example:
+        >>> # Visualize cluster-wise feature relevance
+        >>> explained_clustering.show_cluster_relevance([0, 1, 2])
+        """
         self.cluster_relevance.show_cluster_relevance(subset_index)  # type: ignore
 
     def show_cluster_relevance_for_feature(
         self, feature: str, subset_index: index_type = None
     ):
+        """
+        Visualizes feature importance scores for a single feature across clusters using a bar plot.
+
+        Args:
+            feature (str): The name of the feature.
+            subset_index (Optional[list]): Optional list of cluster indices to subset the data.
+
+        Example:
+        >>> # Visualize feature importance scores for a single feature across clusters
+        >>> explained_clustering.show_cluster_relevance_for_feature("FeatureA", [0, 1, 2])
+        """
         self.cluster_relevance.show_single_feature_relevance(feature, subset_index)  # type: ignore
 
     def show_cluster_relevance_for_cluster(self, cluster_index: int):
+        """
+        Visualizes feature importance scores for a single cluster using a bar plot.
+
+        Args:
+            cluster_index (int): The index of the cluster.
+
+        Example:
+        >>> # Visualize feature importance scores for a single cluster
+        >>> explained_clustering.show_cluster_relevance_for_cluster(2)
+        """
         self.cluster_relevance.show_single_cluster_relevance(cluster_index)  # type: ignore
 
     def show_global_relevance(self):
+        """
+        Visualizes global feature relevance using a bar plot.
+
+        Example:
+        >>> # Visualize global feature relevance
+        >>> explained_clustering.show_global_relevance()
+        """
         self.global_relevance.show_global_relevance()
 
 

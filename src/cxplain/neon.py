@@ -14,9 +14,9 @@ from cxplain.errors import NotFittedError
 class NeonExplainer(BaseExplainer, ABC):
     def __init__(
         self,
-        data: NDArray[Shape["* num_obs, * num_features"], Floating],
-        cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
-        predictions: NDArray[Shape["* num_obs"], Int],
+        data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
+        cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],  # type: ignore
+        predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
     ):
         super().__init__()
@@ -36,21 +36,21 @@ class NeonExplainer(BaseExplainer, ABC):
 @dataclass
 class KMeansNetwork:
     index_actual: int
-    weights: NDArray[Shape["* num_clusters, * num_features"], Floating]
-    bias: NDArray[Shape["* num_clusters"], Floating]
-    hidden_layer: Optional[NDArray[Shape["* num_clusters"], Floating]] = None
+    weights: NDArray[Shape["* num_clusters, * num_features"], Floating]  # type: ignore
+    bias: NDArray[Shape["* num_clusters"], Floating]  # type: ignore
+    hidden_layer: Optional[NDArray[Shape["* num_clusters"], Floating]] = None  # type: ignore
     output: Optional[float] = None
 
     def forward(
-        self, observation: NDArray[Shape["* num_features"], Floating]
+        self, observation: NDArray[Shape["* num_features"], Floating]  # type: ignore
     ) -> "KMeansNetwork":
         self.hidden_layer = self.weights.dot(observation) + self.bias
         self.output = np.amin(np.delete(self.hidden_layer, self.index_actual))
         return self
 
     def backward(
-        self, observation: NDArray[Shape["* num_features"], Floating], beta: float
-    ) -> NDArray[Shape["* num_features"], Floating]:
+        self, observation: NDArray[Shape["* num_features"], Floating], beta: float  # type: ignore
+    ) -> NDArray[Shape["* num_features"], Floating]:  # type: ignore
         self._check_forward_pass()
 
         num_clusters = self.hidden_layer.shape[0]

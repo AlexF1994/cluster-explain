@@ -14,9 +14,9 @@ class GradientExplainer(BaseExplainer):
 
     def __init__(
         self,
-        data: NDArray[Shape["* num_obs, * num_features"], Floating],
-        cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],
-        cluster_predictions: NDArray[Shape["* num_obs"], Int],
+        data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
+        cluster_centers: NDArray[Shape["* num_clusters, * num_features"], Floating],  # type: ignore
+        cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         metric: Optional[Type[Metric]] = None,
         enable_abs_calculation: bool = True,
         feature_names: Optional[List[str]] = None,

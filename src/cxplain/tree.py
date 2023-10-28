@@ -16,8 +16,8 @@ from cxplain.base_explainer import BaseExplainer, ExplainedClustering
 class DecisionTreeExplainer(BaseExplainer):
     def __init__(
         self,
-        data: NDArray[Shape["* num_obs, * num_features"], Floating],
-        cluster_predictions: NDArray[Shape["* num_obs"], Int],
+        data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
+        cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
         **kwargs
     ):
@@ -50,8 +50,8 @@ class DecisionTreeExplainer(BaseExplainer):
 class RandomForestExplainer(BaseExplainer):
     def __init__(
         self,
-        data: NDArray[Shape["* num_obs, * num_features"], Floating],
-        cluster_predictions: NDArray[Shape["* num_obs"], Int],
+        data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
+        cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
         **kwargs
     ):
@@ -82,7 +82,7 @@ class RandomForestExplainer(BaseExplainer):
 class ExKMCExplainer(BaseExplainer):
     def __init__(
         self,
-        data: NDArray[Shape["* num_obs, * num_features"], Floating],
+        data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
         kmeans_fitted: KMeans,
         feature_names: Optional[List[str]] = None,
         **kwargs

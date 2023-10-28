@@ -170,10 +170,10 @@ def get_distance_metric(metric_name: str) -> Type[Metric]:
         Type[Metric]: The desired distance metric.
     """
     if metric_name == "manhattan":
-        return ManhattanMetric()
+        return ManhattanMetric()  # type: ignore
 
     if metric_name == "euclidean":
-        return EuclideanMetric()
+        return EuclideanMetric()  # type: ignore
 
     else:
         raise MetricNotImplementedError(
