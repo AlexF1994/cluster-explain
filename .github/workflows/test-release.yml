@@ -49,7 +49,7 @@ jobs:
 
       - name: Install package
         run: |
-          poetry install --no-interaction
+          poetry install --no-interaction --only-root
 
       - name: build docs
         run: |
