@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry config experimental.new-installer false
-          poetry install --no-interaction --no-root --with docs
+          poetry install --no-interaction --no-root --with docs --without dev
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
       - name: Install package
