@@ -17,7 +17,8 @@ build:
       # Tell poetry to not use a virtual environment
       - poetry config virtualenvs.create false
     post_install:
-      - poetry install --with docs
+      - poetry config experimental.new-installer false # workaraound for installing exkmc
+      - poetry install --with docs --without dev
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
