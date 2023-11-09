@@ -62,7 +62,7 @@ class GlobalExplainedClustering:
         if not isinstance(other, GlobalExplainedClustering):
             return False
         global_equal = np.all(
-            np.isclose(self.global_relevance_df.values, other.global_relevance_df.values)  # type: ignore
+            np.isclose(self.global_relevance.values, other.global_relevance.values)  # type: ignore
         )
         return global_equal  # type: ignore
 
