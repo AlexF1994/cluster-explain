@@ -38,15 +38,14 @@ class DecisionTreeExplainer(BaseExplainer):
             Computes and returns global feature relevance scores based on the fitted decision tree.
 
     Example:
+
     >>> # Create a DecisionTreeExplainer instance
     >>> data = ...  # Input data for clustering
     >>> cluster_predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = DecisionTreeExplainer(data, cluster_predictions, feature_names=feature_names)
-
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain the clustering results
     >>> explained_result = explainer.explain()
     """
@@ -73,6 +72,7 @@ class DecisionTreeExplainer(BaseExplainer):
             DecisionTreeExplainer: The fitted DecisionTreeExplainer instance.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -108,6 +108,7 @@ class DecisionTreeExplainer(BaseExplainer):
             NotFittedError: If the explainer is not fitted (fit method not called beforehand).
 
         Example:
+
         >>> # Explain the clustering results
         >>> explained_result = explainer.explain()
         """
@@ -140,15 +141,14 @@ class RandomForestExplainer(BaseExplainer):
             Computes and returns global feature relevance scores based on the fitted random forest.
 
     Example:
+
     >>> # Create a RandomForestExplainer instance
     >>> data = ...  # Input data for clustering
     >>> cluster_predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = RandomForestExplainer(data, cluster_predictions, feature_names=feature_names)
-
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain the clustering results
     >>> explained_result = explainer.explain()
     """
@@ -175,6 +175,7 @@ class RandomForestExplainer(BaseExplainer):
             RandomForestExplainer: The fitted RandomForestExplainer instance.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -208,6 +209,7 @@ class RandomForestExplainer(BaseExplainer):
             NotFittedError: If the explainer is not fitted (fit method not called).
 
         Example:
+
         >>> # Explain the clustering results
         >>> explained_result = explainer.explain()
         """
@@ -240,15 +242,14 @@ class ExKMCExplainer(BaseExplainer):
             Computes and returns global feature relevance scores based on the fitted ExKMC explainer.
 
     Example:
+
     >>> # Create an ExKMCExplainer instance
     >>> data = ...  # Input data for clustering
     >>> kmeans_model = ...  # A fitted K-Means model
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = ExKMCExplainer(data, kmeans_fitted=kmeans_model, feature_names=feature_names)
-
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain the clustering results
     >>> explained_result = explainer.explain()
     """
@@ -275,6 +276,7 @@ class ExKMCExplainer(BaseExplainer):
             ExKMCExplainer: The fitted ExKMCExplainer instance.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -309,6 +311,7 @@ class ExKMCExplainer(BaseExplainer):
             NotFittedError: If the explainer is not fitted (fit method not called).
 
         Example:
+
         >>> # Explain the clustering results
         >>> explained_result = explainer.explain()
         """

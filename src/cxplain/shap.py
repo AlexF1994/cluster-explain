@@ -31,31 +31,28 @@ class ShapExplainer(BaseExplainer):
         - _calculate_pointwise_relevance(self) -> pd.DataFrame:
             Computes pointwise feature relevance scores using SHAP values.
 
-        - _get_relevant_shap_values(
-            shap_values: NDArray[Shape["* num_cluster, * num_obs, * num_features"], Floating],
-            cluster_predictions: NDArray[Shape["* num_obs"], Int]
-        ) -> NDArray[Shape["* num_obs, * num_features"], Floating]:
+        - _get_relevant_shap_values(shap_values, cluster_predictions)
+            -> NDArray[Shape["* num_obs, * num_features"], Floating]:
             Extracts only the SHAP values of to the assigned cluster for each observation.
 
-        - _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
+        - _calculate_cluster_relevance(self, pointwise_scores) -> pd.DataFrame:
             Computes cluster-wise feature relevance scores based on pointwise scores.
 
-        - _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
+        - _calculate_global_relevance(self, pointwise_scores) -> pd.Series:
             Computes global feature relevance scores based on pointwise scores.
 
         - explain(self) -> ExplainedClustering:
             Explains clustering results by computing pointwise, cluster, and global feature relevance scores.
 
     Example:
+
     >>> # Create a ShapExplainer instance
     >>> data = ...  # Input data for clustering
     >>> cluster_predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = ShapExplainer(data, cluster_predictions, feature_names=feature_names)
-
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain clustering results
     >>> explained_result = explainer.explain()
     """
@@ -80,6 +77,7 @@ class ShapExplainer(BaseExplainer):
         Fits the explainer by training the Random Forest classifier and initializing the SHAP explainer.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -96,6 +94,7 @@ class ShapExplainer(BaseExplainer):
             pd.DataFrame: Pointwise feature relevance scores based on SHAP values.
 
         Example:
+
         >>> # Compute pointwise feature relevance scores
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
@@ -126,6 +125,7 @@ class ShapExplainer(BaseExplainer):
             NDArray[Shape["* num_obs, * num_features"], Floating]: Relevant SHAP values.
 
         Example:
+
         >>> # Extract relevant SHAP values
         >>> relevant_shap_values = explainer._get_relevant_shap_values(shap_values, cluster_predictions)
         """
@@ -142,12 +142,13 @@ class ShapExplainer(BaseExplainer):
         Computes cluster-wise feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.DataFrame: Cluster-wise feature relevance scores.
 
         Example:
+
         >>> # Compute cluster-wise feature relevance scores
         >>> cluster_relevance = explainer._calculate_cluster_relevance(pointwise_scores)
         """
@@ -165,12 +166,13 @@ class ShapExplainer(BaseExplainer):
         Computes global feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.Series: Global feature relevance scores.
 
         Example:
+
         >>> # Compute global feature relevance scores
         >>> global_relevance = explainer._calculate_global_relevance(pointwise_scores)
         """
@@ -184,6 +186,7 @@ class ShapExplainer(BaseExplainer):
             ExplainedClustering: An instance of ExplainedClustering containing feature relevance scores.
 
         Example:
+
         >>> # Explain clustering results
         >>> explained_result = explainer.explain()
         """

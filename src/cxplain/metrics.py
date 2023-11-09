@@ -10,7 +10,7 @@ from cxplain.errors import MetricNotImplementedError
 
 class Metric(ABC):
     """
-    Base class for metrics used by different explainer.
+    Base class for metrics used by different explainers.
     """
 
     @staticmethod
@@ -20,8 +20,8 @@ class Metric(ABC):
         Abstract method to caclculate the distance between x and y.
 
         Args:
-            x (NDArray): Input to distance calculation.
-            y (NDArray): Input to distance calculation.
+            x : Input to distance calculation.
+            y : Input to distance calculation.
         """
         pass
 
@@ -29,11 +29,11 @@ class Metric(ABC):
     @abstractmethod
     def calculate_gradient(x: NDArray, y: NDArray):
         """
-        Abstract method to caclculate the gradient of the metric.
+        Abstract method to caclculate the pointwise gradient of the metric with respect to x.
 
         Args:
-            x (NDArray): Input to metric calculation.
-            y (NDArray): Input to metric calculation.
+            x : Input to metric calculation.
+            y : Input to metric calculation.
         """
         pass
 
@@ -49,49 +49,39 @@ class ManhattanMetric(Metric):
         Calculate pointwise Manhattan distance between x and y.
 
         Args:
-            x (NDArray): Input to distance calculation.
-            y (NDArray): Input to distance calculation.
+            x : Input to distance calculation.
+            y : Input to distance calculation.
 
         Returns:
             NDArray: Pointwise Manhattan distance.
 
         Example:
-            .. code-block:: python
 
-                import numpy as np
-
-                x = np.array([1, 2, 3])
-                y = np.array([4, 5, 6])
-                result = ManhattenMetric.calculate(x, y)
-                print(result)  # Output: array([3, 3, 3])
-
+        >>> x = np.array([1, 2, 3])
+        >>> y = np.array([4, 5, 6])
+        >>> result = ManhattenMetric.calculate(x, y)
+        >>> print(result)  # Output: array([3, 3, 3])
         """
         return abs(x - y)
 
     @staticmethod
     def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
         """
-        Calculate the pointwise gradient between x and y.
-
-        The pointwise gradient is computed as (x - y) / |x - y|.
+        Calculate the pointwise gradient between x and y of the Manhatten distance with respect to x.
 
         Args:
-            x (NDArray): Input for gradient calculation.
-            y (NDArray): Input for gradient calculation.
+            x : Input for gradient calculation.
+            y : Input for gradient calculation.
 
         Returns:
             NDArray: Pointwise gradient.
 
         Example:
-            .. code-block:: python
 
-                import numpy as np
-
-                x = np.array([1.0, 2.0, 3.0])
-                y = np.array([4.0, 5.0, 6.0])
-                gradient = ManhattenMetric.calculate_gradient(x, y)
-                print(gradient)  # Output: array([-1., -1., -1.])
-
+        >>> x = np.array([1.0, 2.0, 3.0])
+        >>> y = np.array([4.0, 5.0, 6.0])
+        >>> gradient = ManhattenMetric.calculate_gradient(x, y)
+        >>> print(gradient)  # Output: array([-1., -1., -1.])
         """
         return (x - y) / abs(x - y)
 
@@ -107,51 +97,40 @@ class EuclideanMetric(Metric):
         Calculate pointwise Euclidean distance between x and y.
 
         Args:
-            x (NDArray): Input to distance calculation.
-            y (NDArray): Input to distance calculation.
+            x : Input to distance calculation.
+            y : Input to distance calculation.
 
         Returns:
             NDArray: Pointwise Euclidean distance.
 
         Example:
-            .. code-block:: python
-
-                import numpy as np
-
-                x = np.array([1.0, 2.0, 3.0])
-                y = np.array([4.0, 5.0, 6.0])
-
-                # Calculate pointwise Euclidean distance
-                distance = EuclideanMetric.calculate(x, y)
-                print(distance)  # Output: array([9., 9., 9.])
-
+        >>> x = np.array([1.0, 2.0, 3.0])
+        >>> y = np.array([4.0, 5.0, 6.0])
+        >>> # Calculate pointwise Euclidean distance
+        >>> distance = EuclideanMetric.calculate(x, y)
+        >>> print(distance)  # Output: array([9., 9., 9.])
         """
         return (x - y) ** 2
 
     @staticmethod
     def calculate_gradient(x: NDArray, y: NDArray) -> NDArray:
         """
-        Calculate the gradient of pointwise Euclidean distance between x and y.
+        Calculate the gradient of pointwise Euclidean distance between x and y with respect to x.
 
         Args:
-            x (NDArray): Input for gradient calculation.
-            y (NDArray): Input for gradient calculation.
+            x : Input for gradient calculation.
+            y : Input for gradient calculation.
 
         Returns:
             NDArray: Pointwise Euclidean gradient.
 
         Example:
-            .. code-block:: python
 
-                import numpy as np
-
-                x = np.array([1.0, 2.0, 3.0])
-                y = np.array([4.0, 5.0, 6.0])
-
-                # Calculate pointwise Euclidean gradient
-                gradient = EuclideanMetric.calculate_gradient(x, y)
-                print(gradient)  # Output: array([-6., -6., -6.])
-
+        >>> x = np.array([1.0, 2.0, 3.0])
+        >>> y = np.array([4.0, 5.0, 6.0])
+        >>> # Calculate pointwise Euclidean gradient
+        >>> gradient = EuclideanMetric.calculate_gradient(x, y)
+        >>> print(gradient)  # Output: array([-6., -6., -6.])
         """
         return 2 * (x - y)
 
@@ -161,7 +140,7 @@ def get_distance_metric(metric_name: str) -> Type[Metric]:
     Factory method for distance metrices.
 
     Args:
-        metric_name (str): Name of the distance metric that should be applied.
+        metric_name: Name of the distance metric that should be applied.
 
     Raises:
         MetricNotImplementedError: Raised if desired metric is not yet implemented.

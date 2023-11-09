@@ -28,32 +28,30 @@ class XkmExplainer(BaseExplainer):
         cluster_predictions (NDArray[Shape["* num_obs"], Int]): Cluster predictions for the input data.
         feature_names (Optional[List[str]]): Optional list of feature names.
         num_features (int): The number of features in the input data.
-        feature_wise_distance_matrix (NDArray[Shape["* num_obs, * num_clusters,
-                                                     * num_features"], Floating]): Feature-wise distance matrix.
+        feature_wise_distance_matrix (NDArray[Shape["* num_obs, * num_clusters,* num_features"], Floating]):
+            Feature-wise distance matrix.
 
     Methods:
         - fit(self):
             Fits the explainer by calculating the feature-wise distance matrix making it ready for use.
 
-        - _calculate_feature_wise_distance_matrix(self) -> NDArray[Shape["* num_obs, * num_clusters,
-                                                                          * num_features"], Floating]:
+        - _calculate_feature_wise_distance_matrix(self)
+            -> NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating]:
             Calculates the feature-wise distance matrix.
 
         - _calculate_pointwise_relevance(self) -> pd.DataFrame:
             Computes pointwise feature relevance scores.
 
-        - _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
+        - _calculate_cluster_relevance(self, pointwise_scores) -> pd.DataFrame:
             Computes cluster-wise feature relevance scores based on pointwise scores.
 
-        - _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
+        - _calculate_global_relevance(self, pointwise_scores) -> pd.Series:
             Computes global feature relevance scores based on pointwise scores.
 
         - explain(self) -> ExplainedClustering:
             Explains clustering results by computing pointwise, cluster, and global feature relevance scores.
 
     Example:
-    >>> from your_module import XkmExplainer
-    >>> import numpy as np
 
     >>> # Create an XkmExplainer instance
     >>> data = ...  # Input data for clustering
@@ -63,11 +61,9 @@ class XkmExplainer(BaseExplainer):
     >>> cluster_predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = XkmExplainer(data, cluster_centers, flavour, distance_metric,
-                                 cluster_predictions, feature_names=feature_names)
-
+    ...                          cluster_predictions, feature_names=feature_names)
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain clustering results
     >>> explained_result = explainer.explain()
     """
@@ -104,6 +100,7 @@ class XkmExplainer(BaseExplainer):
                                                                                    num_features.
 
         Example:
+
         >>> # Calculate the feature-wise distance matrix
         >>> feature_wise_distance_matrix = explainer._calculate_feature_wise_distance_matrix()
         """
@@ -132,6 +129,7 @@ class XkmExplainer(BaseExplainer):
             pd.DataFrame: Pointwise feature relevance scores.
 
         Example:
+
         >>> # Compute pointwise feature relevance scores
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
@@ -149,12 +147,13 @@ class XkmExplainer(BaseExplainer):
         Computes cluster-wise feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.DataFrame: Cluster-wise feature relevance scores.
 
         Example:
+
         >>> # Compute cluster-wise feature relevance scores
         >>> cluster_relevance = explainer._calculate_cluster_relevance(pointwise_scores)
         """
@@ -169,12 +168,13 @@ class XkmExplainer(BaseExplainer):
         Computes global feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.Series: Global feature relevance scores.
 
         Example:
+
         >>> # Compute global feature relevance scores
         >>> global_relevance = explainer._calculate_global_relevance(pointwise_scores)
         """
@@ -185,6 +185,7 @@ class XkmExplainer(BaseExplainer):
         Fits the explainer by calculating the feature-wise distance matrix making it ready for use.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -203,6 +204,7 @@ class XkmExplainer(BaseExplainer):
             ExplainedClustering: An instance of ExplainedClustering containing feature relevance scores.
 
         Example:
+
         >>> # Explain clustering results
         >>> explained_result = explainer.explain()
         """
@@ -227,7 +229,7 @@ def _get_xkm_flavour(flavour: str, **kwargs):
     Factory method for getting each flavour of Xkm.
 
     Args:
-        flavour (str): The desired flavour of Xkm, either 'next_best' or 'all'.
+        flavour: The desired flavour of Xkm, either 'next_best' or 'all'.
 
     Returns:
         BaseXkmFlavour: An instance of the specified Xkm flavour.
@@ -236,12 +238,11 @@ def _get_xkm_flavour(flavour: str, **kwargs):
         NonExistingXkmFlavourError: If the specified flavour does not exist.
 
     Example:
+
     >>> # Get an instance of the "next_best" Xkm flavour
     >>> xkm_flavour = _get_xkm_flavour("next_best")
-
     >>> # Get an instance of the "all" Xkm flavour
     >>> xkm_flavour = _get_xkm_flavour("all")
-
     >>> # Attempt to get an instance of a non-existing Xkm flavour (Raises an error)
     >>> xkm_flavour = _get_xkm_flavour("invalid_flavour")
     """
@@ -277,26 +278,21 @@ class XkmNextBestFlavour(BaseXkmFlavour):
 
     Methods:
         - _best_calc(
-            feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
-            cluster_predictions: NDArray[Shape["* num_obs"], Int]
-        ) -> Tuple[NDArray, NDArray]:
+            feature_wise_distance_matrix, cluster_predictions) -> Tuple[NDArray, NDArray]:
             Find the "next best" alternative clusters for each feature and observation.
 
-        - _calculate_pointwise_relevance(
-            feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
-            cluster_predictions: NDArray[Shape["* num_obs"], Int]
-        ) -> pd.DataFrame:
+        - _calculate_pointwise_relevance(feature_wise_distance_matrix, cluster_predictions) -> pd.DataFrame:
             Calculate pointwise feature relevance using the distance to the "next best" cluster
             for each feature and observation.
 
     Example:
+
     >>> # Create an instance of XkmNextBestFlavour
     >>> xkm_flavour = XkmNextBestFlavour()
-
     >>> # Calculate pointwise feature relevance using the "Next Best" method
     >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
-    >>>     feature_wise_distance_matrix, cluster_predictions
-    >>> )
+    ...     feature_wise_distance_matrix, cluster_predictions
+    ... )
     """
 
     @staticmethod
@@ -399,17 +395,16 @@ class XkmNextBestFlavour(BaseXkmFlavour):
             pd.DataFrame: A DataFrame containing pointwise feature relevance scores.
 
         Example:
+
         >>> # Create an instance of XkmNextBestFlavour
         >>> xkm_flavour = XkmNextBestFlavour()
-
         >>> # Prepare feature-wise distance matrix and cluster predictions
         >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
         >>> cluster_predictions = np.array(...)  # Replace with your data
-
         >>> # Calculate pointwise feature relevance using the "Next Best" method
         >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
-        >>>     feature_wise_distance_matrix, cluster_predictions
-        >>> )
+        ...     feature_wise_distance_matrix, cluster_predictions
+        ... )
         """
         fb_ac, fb_ba = self._best_calc(
             feature_wise_distance_matrix, cluster_predictions
@@ -424,23 +419,20 @@ class XkmAllFlavour(BaseXkmFlavour):
     the distances to the actual assigned cluster with the complete distances over all clusters.
 
     Methods:
-        - _calculate_pointwise_relevance(
-            feature_wise_distance_matrix: NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating],
-            cluster_predictions: NDArray[Shape["* num_obs"], Int]
-        ) -> pd.DataFrame:
+        - _calculate_pointwise_relevance(feature_wise_distance_matrix, cluster_predictions) -> pd.DataFrame:
             Calculate pointwise feature relevance using the distance to all clusters
             for each feature and observation.
 
     Example:
+
     >>> # Create an instance of XkmAllFlavour
     >>> xkm_flavour = XkmAllFlavour()
-
     >>> # Calculate pointwise feature relevance using the "All Features" method
     >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
     >>> cluster_predictions = np.array(...)  # Replace with your data
     >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
-    >>>     feature_wise_distance_matrix, cluster_predictions
-    >>> )
+    ...     feature_wise_distance_matrix, cluster_predictions
+    ... )
     """
 
     def _calculate_pointwise_relevance(
@@ -464,17 +456,16 @@ class XkmAllFlavour(BaseXkmFlavour):
             pd.DataFrame: A DataFrame containing pointwise feature relevance scores.
 
         Example:
+
         >>> # Create an instance of XkmAllFlavour
         >>> xkm_flavour = XkmAllFlavour()
-
         >>> # Prepare feature-wise distance matrix and cluster predictions
         >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
         >>> cluster_predictions = np.array(...)  # Replace with your data
-
         >>> # Calculate pointwise feature relevance using the "All Features" method
         >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
-        >>>     feature_wise_distance_matrix, cluster_predictions
-        >>> )
+        ...     feature_wise_distance_matrix, cluster_predictions
+        ... )
         """
         # sum up distances over cluster
         complete_distances = np.sum(feature_wise_distance_matrix, axis=1)

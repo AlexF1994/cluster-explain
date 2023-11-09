@@ -19,8 +19,8 @@ class NeonExplainer(BaseExplainer, ABC):
 
     Attributes:
         data (NDArray[Shape["* num_obs, * num_features"], Floating]): Input data for clustering.
-        cluster_centers (NDArray[Shape["* num_clusters,
-                         * num_features"], Floating]): Cluster centers for the input data.
+        cluster_centers (NDArray[Shape["* num_clusters, * num_features"], Floating]):
+            Cluster centers for the input data.
         predictions (NDArray[Shape["* num_obs"], Int]): Cluster predictions for the input data.
         feature_names (Optional[List[str]]): Optional list of feature names.
         num_clusters (int): The number of clusters.
@@ -67,11 +67,10 @@ class KMeansNetwork:
         output (Optional[float]): The output of the neural network.
 
     Methods:
-        - forward(self, observation: NDArray[Shape["* num_features"], Floating]) -> KMeansNetwork:
+        - forward(self, observation) -> KMeansNetwork:
             Performs a forward pass of the neural network with the given observation and computes the output.
 
-        - backward(self, observation: NDArray[Shape["* num_features"], Floating], beta: float)
-          -> NDArray[Shape["* num_features"], Floating]:
+        - backward(self, observation, beta) -> NDArray[Shape["* num_features"], Floating]:
             Performs a backward pass of the neural network and computes feature
             relevance scores using LRP (Layer-wise Relevance Propagation).
 
@@ -79,20 +78,18 @@ class KMeansNetwork:
             Checks if a forward pass has been conducted, raising an error if not.
 
     Example:
+
     >>> # Create a KMeansNetwork instance
     >>> index_actual = 0
     >>> weights = np.random.rand(3, 2)  # Weights for the neural network
     >>> bias = np.random.rand(3)  # Bias terms for the neural network
     >>> network = KMeansNetwork(index_actual, weights, bias)
-
     >>> # Perform a forward pass
     >>> observation = np.random.rand(2)  # Input observation
     >>> network.forward(observation)
-
     >>> # Perform a backward pass to compute feature relevances
     >>> beta = 0.5  # Beta value for the backward pass
     >>> feature_relevances = network.backward(observation, beta)
-
     >>> # Check if a forward pass has been conducted
     >>> network._check_forward_pass()
     """
@@ -116,6 +113,7 @@ class KMeansNetwork:
             KMeansNetwork: The KMeansNetwork instance after the forward pass.
 
         Example:
+
         >>> # Perform a forward pass
         >>> observation = np.random.rand(2)  # Input observation
         >>> network.forward(observation)
@@ -133,12 +131,13 @@ class KMeansNetwork:
 
         Args:
             observation (NDArray[Shape["* num_features"], Floating]): Input observation for the backward pass.
-            beta (float): Beta value for the backward pass.
+            beta: Beta value for the backward pass.
 
         Returns:
             NDArray[Shape["* num_features"], Floating]: Feature relevance scores computed during the backward pass.
 
         Example:
+
         >>> # Perform a backward pass to compute feature relevances
         >>> beta = 0.5  # Beta value for the backward pass
         >>> feature_relevances = network.backward(observation, beta)
@@ -191,6 +190,7 @@ class KMeansNetwork:
             This method is intended for internal use and should not be called directly.
 
         Example:
+
         >>> # Check if a forward pass has been conducted
         >>> network._check_forward_pass()
         """
@@ -217,16 +217,16 @@ class NeonKMeansExplainer(
         networks (List[KMeansNetwork]): List of KMeansNetwork instances for explaining clustering results.
 
     Methods:
-        - _init_network(self, index_observation: int) -> KMeansNetwork:
+        - _init_network(self, index_observation) -> KMeansNetwork:
             Initializes and returns a KMeansNetwork for a specific observation.
 
         - _calculate_pointwise_relevance(self) -> pd.DataFrame:
             Computes pointwise feature relevance scores for the input data.
 
-        - _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
+        - _calculate_cluster_relevance(self, pointwise_scores) -> pd.DataFrame:
             Computes cluster-wise feature relevance scores based on pointwise scores.
 
-        - _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
+        - _calculate_global_relevance(self, pointwise_scores) -> pd.Series:
             Computes global feature relevance scores based on pointwise scores.
 
         - _get_beta(self) -> float:
@@ -239,16 +239,15 @@ class NeonKMeansExplainer(
             Explains clustering results by computing pointwise, cluster, and global feature relevance scores.
 
     Example:
+
     >>> # Create a NeonKMeansExplainer instance
     >>> data = ...  # Input data for clustering
     >>> cluster_centers = ...  # Cluster centers for the input data
     >>> predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = NeonKMeansExplainer(data, cluster_centers, predictions, feature_names=feature_names)
-
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain clustering results
     >>> explained_result = explainer.explain()
     """
@@ -258,12 +257,13 @@ class NeonKMeansExplainer(
         Initializes and returns a KMeansNetwork for a specific observation.
 
         Args:
-            index_observation (int): Index of the observation for which to initialize the network.
+            index_observation: Index of the observation for which to initialize the network.
 
         Returns:
             KMeansNetwork: Initialized KMeansNetwork instance.
 
         Example:
+
         >>> # Initialize a KMeansNetwork for a specific observation
         >>> network = explainer._init_network(index_observation)
         """
@@ -286,6 +286,7 @@ class NeonKMeansExplainer(
             pd.DataFrame: Pointwise feature relevance scores.
 
         Example:
+
         >>> # Compute pointwise feature relevance scores
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
@@ -306,12 +307,13 @@ class NeonKMeansExplainer(
         Computes cluster-wise feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.DataFrame: Cluster-wise feature relevance scores.
 
         Example:
+
         >>> # Compute cluster-wise feature relevance scores
         >>> cluster_relevance = explainer._calculate_cluster_relevance(pointwise_scores)
         """
@@ -327,12 +329,13 @@ class NeonKMeansExplainer(
         Computes global feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.Series: Global feature relevance scores.
 
         Example:
+
         >>> # Compute global feature relevance scores
         >>> global_relevance = explainer._calculate_global_relevance(pointwise_scores)
         """
@@ -348,6 +351,7 @@ class NeonKMeansExplainer(
             float: The beta value.
 
         Example:
+
         >>> # Compute the beta value
         >>> beta = explainer._get_beta()
         """
@@ -360,6 +364,7 @@ class NeonKMeansExplainer(
         Fits the explainer by initializing KMeansNetwork instances for each observation.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -377,6 +382,7 @@ class NeonKMeansExplainer(
             ExplainedClustering: An instance of ExplainedClustering containing feature relevance scores.
 
         Example:
+
         >>> # Explain clustering results
         >>> explained_result = explainer.explain()
         """

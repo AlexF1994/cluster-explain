@@ -31,30 +31,29 @@ class GradientExplainer(BaseExplainer):
         - _calculate_pointwise_relevance(self) -> pd.DataFrame:
             Computes pointwise feature relevance scores based on the pointwise gradient of cluster loss.
 
-        - _calculate_cluster_relevance(self, pointwise_scores: pd.DataFrame) -> pd.DataFrame:
+        - _calculate_cluster_relevance(self, pointwise_scores) -> pd.DataFrame:
             Computes cluster-wise feature relevance scores based on pointwise scores.
 
-        - _calc_abs_value(self, df: pd.DataFrame, enabled: bool) -> pd.DataFrame:
+        - _calc_abs_value(self, df: pd.DataFrame, enabled) -> pd.DataFrame:
             Calculates absolute values for a DataFrame if enabled, or returns the original DataFrame.
 
-        - _calculate_global_relevance(self, pointwise_scores: pd.DataFrame) -> pd.Series:
+        - _calculate_global_relevance(self, pointwise_scores) -> pd.Series:
             Computes global feature relevance scores based on pointwise scores.
 
         - explain(self) -> ExplainedClustering:
             Explains clustering results by computing pointwise, cluster, and global feature relevance scores.
 
     Example:
+
     >>> # Create a GradientExplainer instance
     >>> data = ...  # Input data for clustering
     >>> cluster_centers = ...  # Cluster centers for the input data
     >>> cluster_predictions = ...  # Cluster predictions for the input data
     >>> feature_names = ...  # Optional list of feature names
     >>> explainer = GradientExplainer(data, cluster_centers, cluster_predictions, metric=EuclideanMetric,
-                                      enable_abs_calculation=True, feature_names=feature_names)
-
+    ...                               enable_abs_calculation=True, feature_names=feature_names)
     >>> # Fit the explainer
     >>> explainer.fit()
-
     >>> # Explain clustering results
     >>> explained_result = explainer.explain()
     """
@@ -83,6 +82,7 @@ class GradientExplainer(BaseExplainer):
         Fits the explainer, making it ready for use.
 
         Example:
+
         >>> # Fit the explainer
         >>> explainer.fit()
         """
@@ -96,6 +96,7 @@ class GradientExplainer(BaseExplainer):
             pd.DataFrame: Pointwise feature relevance scores.
 
         Example:
+
         >>> # Compute pointwise feature relevance scores
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
@@ -117,12 +118,13 @@ class GradientExplainer(BaseExplainer):
         Computes cluster-wise feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.DataFrame: Cluster-wise feature relevance scores.
 
         Example:
+
         >>> # Compute cluster-wise feature relevance scores
         >>> cluster_relevance = explainer._calculate_cluster_relevance(pointwise_scores)
         """
@@ -139,13 +141,14 @@ class GradientExplainer(BaseExplainer):
         Calculates absolute values for a DataFrame if enabled, or returns the original DataFrame.
 
         Args:
-            df (pd.DataFrame): The input DataFrame.
-            enabled (bool): Flag to enable/disable absolute value calculation.
+            df: The input DataFrame.
+            enabled: Flag to enable/disable absolute value calculation.
 
         Returns:
             pd.DataFrame: The original or absolute value DataFrame.
 
         Example:
+
         >>> # Calculate absolute values
         >>> df_abs = explainer._calc_abs_value(df, enabled=True)
         """
@@ -158,12 +161,13 @@ class GradientExplainer(BaseExplainer):
         Computes global feature relevance scores based on pointwise scores.
 
         Args:
-            pointwise_scores (pd.DataFrame): Pointwise feature relevance scores.
+            pointwise_scores: Pointwise feature relevance scores.
 
         Returns:
             pd.Series: Global feature relevance scores.
 
         Example:
+
         >>> # Compute global feature relevance scores
         >>> global_relevance = explainer._calculate_global_relevance(pointwise_scores)
         """
@@ -179,6 +183,7 @@ class GradientExplainer(BaseExplainer):
             ExplainedClustering: An instance of ExplainedClustering containing feature relevance scores.
 
         Example:
+
         >>> # Explain clustering results
         >>> explained_result = explainer.explain()
         """
