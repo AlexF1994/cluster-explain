@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cxplain"
+name = "clusterxplain"
 version = "0.1.0"
 description = "Provide feature relevance scores fo clustering."
 authors = ["Alexander Fottner <alexander.fottner@uni-a.de>"]

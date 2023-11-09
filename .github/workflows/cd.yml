@@ -1,0 +1,58 @@
+name: Release Pipeline
+
+on:
+  release:
+    types: [published]
+
+env:
+  PYTHON_VERSION: "3.8"
+  POETRY_VERSION: "1.4.2"
+  POETRY_URL: https://install.python-poetry.org
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        id: setup_python
+
+      - uses: snok/install-poetry@v1
+        with:
+          version: ${{ env.POETRY_VERSION }}
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Build package
+        run: |
+          poetry build
+
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+
+
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/p/clusterxplain
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v3
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
