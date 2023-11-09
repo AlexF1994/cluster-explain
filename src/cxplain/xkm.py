@@ -23,8 +23,9 @@ class XkmExplainer(BaseExplainer):
     Attributes:
         data (NDArray[Shape["* num_obs, * num_features"], Floating]): Input data for clustering.
         cluster_centers (NDArray[Shape["* num_clusters, * num_features"], Floating]): Cluster centers.
-        flavour (str): Flavour of the XkMedoids method.
-        distance_metric (str): Distance metric used for calculating feature-wise distances.
+        flavour (str): Flavour of the XkMedoids method, "next_best" or "all".
+        distance_metric (str): Distance metric used for calculating feature-wise distances, either "euclidean"
+                               or "manhatten".
         cluster_predictions (NDArray[Shape["* num_obs"], Int]): Cluster predictions for the input data.
         feature_names (Optional[List[str]]): Optional list of feature names.
         num_features (int): The number of features in the input data.

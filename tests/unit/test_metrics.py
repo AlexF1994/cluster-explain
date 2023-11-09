@@ -3,7 +3,7 @@ import pytest
 
 from cxplain.metrics import (
     EuclideanMetric,
-    ManhattanMetric,
+    ManhattenMetric,
     MetricNotImplementedError,
     get_distance_metric,
 )
@@ -20,14 +20,14 @@ def y():
 
 
 def test_get_distance_metric():
-    assert isinstance(get_distance_metric("manhattan"), ManhattanMetric)
+    assert isinstance(get_distance_metric("manhatten"), ManhattenMetric)
     assert isinstance(get_distance_metric("euclidean"), EuclideanMetric)
     with pytest.raises(MetricNotImplementedError):
         get_distance_metric("bla")
 
 
 def test_calculate_manhatten(x, y):
-    metric = get_distance_metric("manhattan")
+    metric = get_distance_metric("manhatten")
     expected = np.array([[1, 1], [0.5, 0.5]])
     actual = metric.calculate(x, y)
     np.testing.assert_allclose(expected, actual)  # type: ignore

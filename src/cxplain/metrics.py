@@ -38,7 +38,7 @@ class Metric(ABC):
         pass
 
 
-class ManhattanMetric(Metric):
+class ManhattenMetric(Metric):
     """
     A class for calculating pointwise Manhattan distance and its gradient between two NumPy arrays.
     """
@@ -148,8 +148,8 @@ def get_distance_metric(metric_name: str) -> Type[Metric]:
     Returns:
         Type[Metric]: The desired distance metric.
     """
-    if metric_name == "manhattan":
-        return ManhattanMetric()  # type: ignore
+    if metric_name == "manhatten":
+        return ManhattenMetric()  # type: ignore
 
     if metric_name == "euclidean":
         return EuclideanMetric()  # type: ignore

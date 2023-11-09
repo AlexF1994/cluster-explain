@@ -14,7 +14,7 @@ import sys
 sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 sys.setrecursionlimit(1500)
 
-project = "cxplain"
+project = "clusterxplain"
 copyright = "2023, Alexander Fottner, Jonathan Pfahler"
 author = "Alexander Fottner, Jonathan Pfahler"
 
