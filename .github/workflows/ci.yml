@@ -39,7 +39,7 @@ jobs:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
-      
+
       - name: cache deps
         id: cache-deps
         uses: actions/cache@v2
@@ -55,7 +55,7 @@ jobs:
 
       - name: Install package
         run: |
-          poetry install --no-interaction
+          poetry install --no-interaction --only-root
 
       - name: Test with pytest
         run: |
