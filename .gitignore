@@ -68,6 +68,9 @@ venv*/
 #mypy stuff
 .mypy_cache
 
+#ruff stuff
+.ruff_cache
+
 # project-specific stuff
 # exclude data from source control (but keep the folder)
 data/*

@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cxplain"
+name = "clusterxplain"
 version = "0.1.0"
 description = "Provide feature relevance scores fo clustering."
 authors = ["Alexander Fottner <alexander.fottner@uni-a.de>"]
@@ -34,6 +34,16 @@ ipykernel = "^6.16.0"
 ruff = "^0.0.270"
 pywin32 = {version = "300", platform = "win32"}
 
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "*"
+nbsphinx = "^0.9.3"
+sphinxcontrib-bibtex = "^2.6.1"
+sphinx-codeautolink = "^0.15.0"
+furo = "*"
+
 [tool.ruff]
 line-length = 120
 ignore = ["F821"]
@@ -61,6 +71,9 @@ exclude = [
     "venv",
 ]
 target-version = "py39"
+
+[tool.ruff.pycodestyle]
+max-doc-length = 180
 
 [tool.ruff.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
