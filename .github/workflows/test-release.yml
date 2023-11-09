@@ -38,13 +38,13 @@ jobs:
         run: |
           poetry install --no-interaction --only-root
 
-      - name: build docs
+      - name: Build docs
         run: |
           cd docs
           make clean html
           make html
 
-      - name: build package
+      - name: Build package
         run: |
           poetry build
 
