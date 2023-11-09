@@ -40,6 +40,9 @@ jobs:
 
 
   publish:
+    needs:
+    - build
+
     runs-on: ubuntu-latest
     environment:
       name: release
