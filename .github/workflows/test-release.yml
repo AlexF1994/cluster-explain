@@ -22,24 +22,11 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
         id: setup_python
 
-      - name: cache poetry install
-        uses: actions/cache@v2
-        with:
-          path: ~/.local
-          key: poetry-${{ env.POETRY_VERSION }}
-
       - uses: snok/install-poetry@v1
         with:
           version: ${{ env.POETRY_VERSION }}
           virtualenvs-create: true
           virtualenvs-in-project: true
-
-      - name: cache deps
-        id: cache-deps
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: pydeps-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         run: |
