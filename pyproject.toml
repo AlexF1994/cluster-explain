@@ -2,12 +2,18 @@
 name = "clusterxplain"
 version = "0.1.0"
 description = "Provide feature relevance scores fo clustering."
-authors = ["Alexander Fottner <alexander.fottner@uni-a.de>"]
-license = "Proprietary"
+authors = ["Alexander Fottner <alexander.fottner@uni-a.de>", "Jonathan Pfahler"]
+license = "LICENSE"
 packages = [
     { include = "cxplain", from = "src" },
 ]
 include = ["src/cxplain/res/*"]
+readme = "README.md"
+
+[project.urls]
+Documentation = "https://readthedocs.org/projects/cluster-explain/"
+Repository = "https://github.com/AlexF1994/cluster-explain"
+Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
@@ -33,6 +39,7 @@ isort = "^5.10.1"
 ipykernel = "^6.16.0"
 ruff = "^0.0.270"
 pywin32 = {version = "300", platform = "win32"}
+twine = "4.0.2"
 
 [tool.poetry.group.docs]
 optional = true

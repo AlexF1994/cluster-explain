@@ -30,7 +30,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          # install hascell implementation of pandoc as Python package is only wrapper
+          # install haskell implementation of pandoc as Python package is only wrapper
           # see https://stackoverflow.com/questions/62398231/building-docs-fails-due-to-missing-pandoc
           sudo apt install pandoc
           poetry config experimental.new-installer false
@@ -51,6 +51,10 @@ jobs:
       - name: Build package
         run: |
           poetry build
+
+      - name: Check package
+        run: |
+          twine check --strict dist/*
 
       - name: Store the distribution packages
         uses: actions/upload-artifact@v3
