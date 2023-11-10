@@ -10,17 +10,19 @@ build:
   tools:
     python: "3.8"
   jobs:
+    pre_create_environment:
+       - conda update --yes --quiet --name=base --channel=defaults conda
     post_create_environment:
       # Install poetry
       # https://python-poetry.org/docs/#installing-manually
       - pip install poetry==1.4.2
       # Tell poetry to not use a virtual environment
       - poetry config virtualenvs.create false
-      # fix issue with missin pandoc isntallation
-      - apt install pandoc
     post_install:
       - poetry config experimental.new-installer false # workaraound for installing exkmc
       - poetry install --with docs
+      - pip uninstall pandoc
+      - conda install pandac
 
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
