@@ -9,7 +9,7 @@ pip install clusterxplain
 The source coe is available at: https://github.com/AlexF1994/cluster-explain
 
 ## How to use it
-The official documentation can be found on https://cluster-explain.readthedocs.io/en/latest/index.html
+The official documentation can be found on https://cluster-explain.readthedocs.io/en/latest/index.html.
 
 But you can also jump right to the quickstart [notebook](docs/source/Quickstart.ipynb).
 
