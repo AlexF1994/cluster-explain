@@ -90,5 +90,5 @@ max-complexity = 10
 convention = "google"
 
 [build-system]
-requires = ["poetry>=0.12"]
+requires = ["poetry>=1.0.0"]
 build-backend = "poetry.masonry.api"

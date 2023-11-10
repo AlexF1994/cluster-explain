@@ -16,8 +16,8 @@ build:
       # Install poetry
       # https://python-poetry.org/docs/#installing-manually
       - pip install poetry==1.4.2
-      # ugly workaround for preventing poetry to create its own venv
-      - echo -e "[virtualenvs]\ncreate = false\nin-project = false\n" > poetry.toml
+      # Tell poetry to not use a virtual environment
+      - poetry config virtualenvs.create false --local
 
     post_install:
       - poetry config experimental.new-installer false # workaraound for installing exkmc
