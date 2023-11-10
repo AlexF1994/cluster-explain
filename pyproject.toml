@@ -1,3 +1,6 @@
+[project]
+name = "clusterxplain"
+
 [tool.poetry]
 name = "clusterxplain"
 version = "0.1.0"
