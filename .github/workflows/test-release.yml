@@ -55,6 +55,7 @@ jobs:
 
       - name: Check package
         run: |
+          source `poetry env info --path`/bin/activat
           twine check --strict dist/*
 
       - name: Store the distribution packages
