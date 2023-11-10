@@ -35,6 +35,7 @@ jobs:
           sudo apt install pandoc
           poetry config experimental.new-installer false
           poetry install --no-interaction --no-root --with docs
+          pip install twine==4.0.2
         if: steps.cache-deps.outputs.cache-hit != 'true'
 
       - name: Install package
