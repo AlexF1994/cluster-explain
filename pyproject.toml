@@ -7,17 +7,17 @@ name = "clusterxplain"
 version = "0.1.0"
 description = "Provide feature relevance scores fo clustering."
 authors = ["Alexander Fottner <alexander.fottner@uni-a.de>", "Jonathan Pfahler"]
-license = "LICENSE"
+license = "MIT"
 packages = [
     { include = "cxplain", from = "src" },
 ]
 include = ["src/cxplain/res/*"]
 readme = "README.md"
+documentation = "https://readthedocs.org/projects/cluster-explain/"
+repository = "https://github.com/AlexF1994/cluster-explain"
 
-[project.urls]
-Documentation = "https://readthedocs.org/projects/cluster-explain/"
-Repository = "https://github.com/AlexF1994/cluster-explain"
-Changelog = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+[tool.poetry.urls]
+"Changelog" = "https://github.com/me/spam/blob/master/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
