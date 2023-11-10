@@ -13,9 +13,11 @@ build:
     post_create_environment:
       # Install poetry
       # https://python-poetry.org/docs/#installing-manually
-      - pip install poetry
+      - pip install poetry==1.4.2
       # Tell poetry to not use a virtual environment
       - poetry config virtualenvs.create false
+      # fix issue with missin pandoc isntallation
+      - sudo apt install pandoc
     post_install:
       - poetry config experimental.new-installer false # workaraound for installing exkmc
       - poetry install --with docs
