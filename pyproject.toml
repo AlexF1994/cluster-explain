@@ -13,11 +13,11 @@ packages = [
 ]
 include = ["src/cxplain/res/*"]
 readme = "README.md"
-documentation = "https://readthedocs.org/projects/cluster-explain/"
+documentation = "https://cluster-explain.readthedocs.io/en/latest/index.html"
 repository = "https://github.com/AlexF1994/cluster-explain"
 
 [tool.poetry.urls]
-"Changelog" = "https://github.com/me/spam/blob/master/CHANGELOG.md"
+"Changelog" = "https://github.com/AlexF1994/cluster-explain/blob/release/CHANGELOG.md"
 
 [tool.poetry.dependencies]
 python = "^3.8"
