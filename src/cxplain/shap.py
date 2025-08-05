@@ -62,7 +62,7 @@ class ShapExplainer(BaseExplainer):
         data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
         cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.data = data

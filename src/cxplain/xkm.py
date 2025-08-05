@@ -135,7 +135,8 @@ class XkmExplainer(BaseExplainer):
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
         pointwise_scores = self.flavour._calculate_pointwise_relevance(
-            self.feature_wise_distance_matrix, self.cluster_predictions  # type: ignore
+            self.feature_wise_distance_matrix,
+            self.cluster_predictions,  # type: ignore
         )
         return pointwise_scores.pipe(
             self._rename_feature_columns, self.num_features, self.feature_names
@@ -251,6 +252,10 @@ def _get_xkm_flavour(flavour: str, **kwargs):
         return XkmNextBestFlavour()
     if flavour == "all":
         return XkmAllFlavour()
+    if flavour == "within_scatter":
+        return XkmWithinScatterFlavour()
+    if flavour == "scatter_ratio":
+        return XkmScatterRatioFlavour()
     else:
         raise NonExsitingXkmFlavourError(f"The flovour {flavour} doesn't exist.")
 
@@ -484,3 +489,152 @@ class XkmAllFlavour(BaseXkmFlavour):
             complete_distances - n_clusters * actual_distances
         ) / complete_distances
         return pd.DataFrame(pointwise_scores)
+
+
+class XkmWithinScatterFlavour(BaseXkmFlavour):
+    """
+    This class calculates pointwise feature relevances for k-medoids clustering by cacluclating the contribution
+    to the within scatter of the assigned cluster.
+
+    Methods:
+        - _calculate_pointwise_relevance(feature_wise_distance_matrix, cluster_predictions) -> pd.DataFrame:
+            Calculate pointwise feature relevance using the distance to all clusters
+            for each feature and observation.
+
+    Example:
+
+    >>> # Create an instance of XkmAllFlavour
+    >>> xkm_flavour = XkmWithinScatterFlavour()
+    >>> # Calculate pointwise feature relevance using the "All Features" method
+    >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
+    >>> cluster_predictions = np.array(...)  # Replace with your data
+    >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
+    ...     feature_wise_distance_matrix, cluster_predictions
+    ... )
+    """
+
+    def _calculate_pointwise_relevance(
+        self,
+        feature_wise_distance_matrix: NDArray[
+            Shape["* num_obs, * num_clusters, * num_features"], Floating  # type: ignore
+        ],
+        cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
+    ) -> pd.DataFrame:
+        """
+        Calculate pointwise feature relevances using the contribution to the within scatter of the
+        assigned cluster.
+
+        Args:
+            feature_wise_distance_matrix (NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating]):
+                Feature-wise distance matrix of every feature to every cluster for each observation.
+            cluster_predictions (NDArray[Shape["* num_obs"], Int]):
+                Assigned clusters for each observation.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing pointwise feature relevance scores.
+
+        Example:
+
+        >>> # Create an instance of XkmAllFlavour
+        >>> xkm_flavour = XkmAllFlavour()
+        >>> # Prepare feature-wise distance matrix and cluster predictions
+        >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
+        >>> cluster_predictions = np.array(...)  # Replace with your data
+        >>> # Calculate pointwise feature relevance using the "All Features" method
+        >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
+        ...     feature_wise_distance_matrix, cluster_predictions
+        ... )
+        """
+
+        # get number of observations in each cluster
+        n_obs_per_cluster = np.bincount(cluster_predictions)
+        # get scaled distance to actual assigned cluster for every observation and feature
+        relevant_distances_scaled = [
+            feature_wise_distance_matrix[i, cluster_predictions[i], :]
+            * n_obs_per_cluster[cluster_predictions[i]]
+            for i in range(feature_wise_distance_matrix.shape[0])
+        ]
+        pointwise_scores = np.vstack(relevant_distances_scaled)
+        return pd.DataFrame(1 - pointwise_scores)
+
+
+class XkmScatterRatioFlavour(BaseXkmFlavour):
+    """
+    This class calculates pointwise feature relevances for k-medoids clustering by comparing
+    the contribution to the within scatter to the contribution to the between scatter.
+
+    Methods:
+        - _calculate_pointwise_relevance(feature_wise_distance_matrix, cluster_predictions) -> pd.DataFrame:
+            Calculate pointwise feature relevance using the distance to all clusters
+            for each feature and observation.
+
+    Example:
+
+    >>> # Create an instance of XkmAllFlavour
+    >>> xkm_flavour = XkmAllFlavour()
+    >>> # Calculate pointwise feature relevance using the "All Features" method
+    >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
+    >>> cluster_predictions = np.array(...)  # Replace with your data
+    >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
+    ...     feature_wise_distance_matrix, cluster_predictions
+    ... )
+    """
+
+    def _calculate_pointwise_relevance(
+        self,
+        feature_wise_distance_matrix: NDArray[
+            Shape["* num_obs, * num_clusters, * num_features"], Floating  # type: ignore
+        ],
+        cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
+    ) -> pd.DataFrame:
+        """
+        Calculate pointwise feature relevances using the distance to all clusters
+        for each feature and observation.
+
+        Args:
+            feature_wise_distance_matrix (NDArray[Shape["* num_obs, * num_clusters, * num_features"], Floating]):
+                Feature-wise distance matrix of every feature to every cluster for each observation.
+            cluster_predictions (NDArray[Shape["* num_obs"], Int]):
+                Assigned clusters for each observation.
+
+        Returns:
+            pd.DataFrame: A DataFrame containing pointwise feature relevance scores.
+
+        Example:
+
+        >>> # Create an instance of XkmAllFlavour
+        >>> xkm_flavour = XkmAllFlavour()
+        >>> # Prepare feature-wise distance matrix and cluster predictions
+        >>> feature_wise_distance_matrix = np.array(...)  # Replace with your data
+        >>> cluster_predictions = np.array(...)  # Replace with your data
+        >>> # Calculate pointwise feature relevance using the "All Features" method
+        >>> relevance_matrix = xkm_flavour._calculate_pointwise_relevance(
+        ...     feature_wise_distance_matrix, cluster_predictions
+        ... )
+        """
+
+        # get number of observations in each cluster
+        cluster_indices = np.unique(cluster_predictions)
+        n_obs_per_cluster = np.bincount(cluster_predictions)
+        # get scaled distance to actual assigned cluster for every observation and feature
+        relevant_distances_scaled = [
+            feature_wise_distance_matrix[i, cluster_predictions[i], :]
+            * n_obs_per_cluster[cluster_predictions[i]]
+            for i in range(feature_wise_distance_matrix.shape[0])
+        ]
+        # get distances to other clusters
+        other_distances_scaled = [
+            feature_wise_distance_matrix[
+                i, cluster_indices != cluster_predictions[i], :
+            ]
+            * n_obs_per_cluster[
+                np.newaxis, cluster_indices != cluster_predictions[i], np.newaxis
+            ]
+            for i in range(feature_wise_distance_matrix.shape[0])
+        ]
+        actual_distances_scaled = np.vstack(relevant_distances_scaled)
+        other_distances_scaled = np.vstack(other_distances_scaled)
+        pointwise_scores = actual_distances_scaled / np.sum(
+            other_distances_scaled, axis=1
+        )
+        return pd.DataFrame(1 - pointwise_scores)

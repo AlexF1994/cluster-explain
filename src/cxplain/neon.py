@@ -101,7 +101,8 @@ class KMeansNetwork:
     output: Optional[float] = None
 
     def forward(
-        self, observation: NDArray[Shape["* num_features"], Floating]  # type: ignore
+        self,
+        observation: NDArray[Shape["* num_features"], Floating],  # type: ignore
     ) -> "KMeansNetwork":
         """
         Performs a forward pass of the neuralized K-Means network with the given observation and computes the output.
@@ -123,7 +124,9 @@ class KMeansNetwork:
         return self
 
     def backward(
-        self, observation: NDArray[Shape["* num_features"], Floating], beta: float  # type: ignore
+        self,
+        observation: NDArray[Shape["* num_features"], Floating],
+        beta: float,  # type: ignore
     ) -> NDArray[Shape["* num_features"], Floating]:  # type: ignore
         """
         Performs a backward pass of the neuralized K-Means network and computes feature relevance scores for one

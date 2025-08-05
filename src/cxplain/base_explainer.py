@@ -171,7 +171,7 @@ class ClusterExplainedClustering:
             else self.cluster_relevance
         )
         sns.heatmap(relevances_to_plot, center=0, cmap="RdYlGn")
-        plt.title("Clusterwise feature importance scores")
+        # plt.title("Clusterwise feature importance scores")
         plt.xlabel("Feature")
         plt.ylabel("Cluster")
         plt.show()
@@ -529,7 +529,7 @@ class ExplainedClustering:
     def _check_relevance_exists(
         explained_clustering: Optional[
             Union[PointwiseExplainedClustering, ClusterExplainedClustering]
-        ] = None
+        ] = None,
     ):
         """
         Check whether the provided clustering expalantion exists

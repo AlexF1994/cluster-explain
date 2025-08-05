@@ -55,13 +55,13 @@ class DecisionTreeExplainer(BaseExplainer):
         data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
         cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.data = data
         self.cluster_predictions = cluster_predictions
         self.tree = DecisionTreeClassifier(**kwargs)
-        self.num_features = (self.data.shape[1],)
+        self.num_features = self.data.shape[1]
         self.feature_names = feature_names
 
     def fit(self):
@@ -158,7 +158,7 @@ class RandomForestExplainer(BaseExplainer):
         data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
         cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
         feature_names: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.data = data
@@ -259,7 +259,7 @@ class ExKMCExplainer(BaseExplainer):
         data: NDArray[Shape["* num_obs, * num_features"], Floating],  # type: ignore
         kmeans_fitted: KMeans,
         feature_names: Optional[List[str]] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__()
         self.data = data
