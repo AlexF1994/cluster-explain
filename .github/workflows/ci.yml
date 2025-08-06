@@ -4,9 +4,9 @@ name: Test
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 env:
@@ -16,7 +16,6 @@ env:
 
 jobs:
   test-code:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +28,7 @@ jobs:
         id: setup_python
 
       - name: cache poetry install
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: ~/.local
           key: poetry-${{ env.POETRY_VERSION }}
