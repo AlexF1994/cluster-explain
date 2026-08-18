@@ -20,31 +20,32 @@ repository = "https://github.com/AlexF1994/cluster-explain"
 "Changelog" = "https://github.com/AlexF1994/cluster-explain/blob/release/CHANGELOG.md"
 
 [tool.poetry.dependencies]
-python = "^3.8"
-pyhocon = "^0.3.54"
+python = ">=3.12,<3.13"
+pyhocon = "^0.3.63"
 importlib-metadata = {version = "^1.0", python = "<3.8"}
-matplotlib = "^3.6.0"
-scikit-learn = "^1.1.2"
-pandas = "^1.5.0"
-numpy = "1.22.0"
-nptyping = "^2.3.1"
-shap = "^0.41"
-seaborn = "^0.12.2"
+matplotlib = "^3.11.1"
+scikit-learn = "^1.9.0"
+pandas = "^3.0.5"
+numpy = ">=1.26,<2.0"
+nptyping = "^2.5.0"
+shap = "<0.52"
+seaborn = "^0.13.2"
+notebook-intelligence = "^5.3.1"
 
 [tool.poetry.group.dev.dependencies]
-black = "22.3.0"
-pre-commit = "^2.2.0"
-pytest = "^5.4.0"
-pytest-cov = "^2.8.0"
-jupyterlab = "^3.0.5"
-bandit = "^1.7.4"
-mypy = "^0.981"
-isort = "^5.10.1"
-ipykernel = "^6.16.0"
-ruff = "^0.0.270"
-pywin32 = {version = "300", platform = "win32"}
-twine = "4.0.2"
-yellowbrick = "1.5"
+black = "^26.5.1"
+pre-commit = "^4.6.2"
+pytest = "^9.1.1"
+pytest-cov = "^7.1.0"
+jupyterlab = "^4.6.3"
+bandit = "^1.9.4"
+mypy = "^2.3.1"
+isort = "^8.0.1"
+ipykernel = "^7.3.0"
+ruff = "^0.16.3"
+pywin32 = {version = ">=311", platform = "win32"}
+twine = "^7.0.0"
+yellowbrick = "^1.5"
 
 [tool.poetry.group.docs]
 optional = true
@@ -95,5 +96,5 @@ max-complexity = 10
 convention = "google"
 
 [build-system]
-requires = ["poetry>=1.0.0"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.8.0"]
+build-backend = "poetry.core.masonry.api"

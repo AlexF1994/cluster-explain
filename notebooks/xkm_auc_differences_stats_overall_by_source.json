@@ -1,0 +1,84 @@
+{
+    "result_individual_local_syn": {
+        "xkm_next_best": {
+            "gradient": {
+                "mean_difference": 0.062142857142857146,
+                "sample_std_difference": 0.29582644284051174,
+                "n_observations_used": 700,
+                "t_statistic": 5.557804237522279
+            },
+            "shap": {
+                "mean_difference": -0.09214285714285714,
+                "sample_std_difference": 0.1976499474757723,
+                "n_observations_used": 700,
+                "t_statistic": -12.334285346614356
+            },
+            "neon": {
+                "mean_difference": 0.07964285714285714,
+                "sample_std_difference": 0.26408101976283366,
+                "n_observations_used": 700,
+                "t_statistic": 7.9791873680237835
+            }
+        },
+        "xkm_all": {
+            "gradient": {
+                "mean_difference": 0.08142857142857143,
+                "sample_std_difference": 0.2914091152143358,
+                "n_observations_used": 700,
+                "t_statistic": 7.39303399815755
+            },
+            "shap": {
+                "mean_difference": -0.07285714285714286,
+                "sample_std_difference": 0.18542872919610226,
+                "n_observations_used": 700,
+                "t_statistic": -10.395470112446727
+            },
+            "neon": {
+                "mean_difference": 0.09892857142857144,
+                "sample_std_difference": 0.25885379689463484,
+                "n_observations_used": 700,
+                "t_statistic": 10.111514712122611
+            }
+        },
+        "xkm_within": {
+            "gradient": {
+                "mean_difference": -0.0125,
+                "sample_std_difference": 0.3397868662105896,
+                "n_observations_used": 700,
+                "t_statistic": -0.9733128227449035
+            },
+            "shap": {
+                "mean_difference": -0.1667857142857143,
+                "sample_std_difference": 0.2372357135271512,
+                "n_observations_used": 700,
+                "t_statistic": -18.60063629027633
+            },
+            "neon": {
+                "mean_difference": 0.005,
+                "sample_std_difference": 0.3001728162233012,
+                "n_observations_used": 700,
+                "t_statistic": 0.4407046821149176
+            }
+        },
+        "xkm_ratio": {
+            "gradient": {
+                "mean_difference": 0.07428571428571429,
+                "sample_std_difference": 0.30261649374232197,
+                "n_observations_used": 700,
+                "t_statistic": 6.494739382320427
+            },
+            "shap": {
+                "mean_difference": -0.08,
+                "sample_std_difference": 0.1988701994346462,
+                "n_observations_used": 700,
+                "t_statistic": -10.643128306145442
+            },
+            "neon": {
+                "mean_difference": 0.09178571428571429,
+                "sample_std_difference": 0.2668908245743535,
+                "n_observations_used": 700,
+                "t_statistic": 9.09893302985299
+            }
+        }
+    }
+}

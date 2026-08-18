@@ -110,7 +110,7 @@ class ShapExplainer(BaseExplainer):
     @staticmethod
     def _get_relevant_shap_values(
         shap_values: NDArray[
-            Shape["* num_cluster, * num_obs, * num_features"], Floating  # type: ignore
+            Shape["* num_obs, * num_features, * num_cluster"], Floating  # type: ignore
         ],
         cluster_predictions: NDArray[Shape["* num_obs"], Int],  # type: ignore
     ):
@@ -130,8 +130,8 @@ class ShapExplainer(BaseExplainer):
         >>> relevant_shap_values = explainer._get_relevant_shap_values(shap_values, cluster_predictions)
         """
         relevant_rows = [
-            shap_values[cluster_predictions[i], i, :]
-            for i in range(shap_values.shape[1])
+            shap_values[i, :, cluster_predictions[i]]
+            for i in range(shap_values.shape[0])
         ]
         return np.vstack(relevant_rows)
 

@@ -142,11 +142,11 @@ class BuddyMoveDataset(MissingTargetsMixin, Dataset):
 class SyntheticDataset(MissingTargetsMixin, Dataset):
     @classmethod
     def _load_data(cls, path=None, **kwargs):
-        return pd.read_csv(path, names=["f_1", "f_2", "unknown"], **kwargs)
+        return pd.read_csv(path, names=["f_1", "f_2"], header=None, sep=r"\s+", **kwargs)
 
     @classmethod
     def _clean_data(cls, data):
-        features = data.drop("unknown", axis=1)
+        features = data.copy()
         feature_names = list(features.columns)
         return pd.DataFrame(MinMaxScaler().fit_transform(features), columns=feature_names)
 
