@@ -81,9 +81,10 @@ class ShapExplainer(BaseExplainer):
         >>> # Fit the explainer
         >>> explainer.fit()
         """
-        self.forest.fit(self.data, self.cluster_predictions)
-        self.is_fitted = True
-        self.explainer = TreeExplainer(self.forest)  # type: ignore
+        if not self.is_fitted:
+            self.forest.fit(self.data, self.cluster_predictions)
+            self.explainer = TreeExplainer(self.forest)  # type: ignore
+            self.is_fitted = True
         return self
 
     def _calculate_pointwise_relevance(self) -> pd.DataFrame:
@@ -99,7 +100,7 @@ class ShapExplainer(BaseExplainer):
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
         self._check_fitted()
-        shap_values = np.array(self.explainer.shap_values(self.data))
+        shap_values = np.asarray(self.explainer.shap_values(self.data))
         relevant_shap_values = self._get_relevant_shap_values(
             shap_values, self.cluster_predictions
         )
@@ -129,11 +130,8 @@ class ShapExplainer(BaseExplainer):
         >>> # Extract relevant SHAP values
         >>> relevant_shap_values = explainer._get_relevant_shap_values(shap_values, cluster_predictions)
         """
-        relevant_rows = [
-            shap_values[i, :, cluster_predictions[i]]
-            for i in range(shap_values.shape[0])
-        ]
-        return np.vstack(relevant_rows)
+        observation_indices = np.arange(shap_values.shape[0])
+        return shap_values[observation_indices, :, cluster_predictions]
 
     def _calculate_cluster_relevance(
         self, pointwise_scores: pd.DataFrame

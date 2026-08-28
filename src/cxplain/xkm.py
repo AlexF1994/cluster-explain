@@ -106,21 +106,15 @@ class XkmExplainer(BaseExplainer):
         >>> feature_wise_distance_matrix = explainer._calculate_feature_wise_distance_matrix()
         """
 
-        centers = np.array(
-            [self.cluster_centers for observation_coordinates in self.data]
+        distance_metric = get_distance_metric(self.distance_metric)
+        return distance_metric.calculate(
+            self.cluster_centers[None, :, :], self.data[:, None, :]
         )
 
-        # calculate the distance of every feature value of ever obs to every feature value in every cluster.
-
-        feature_wise_distance_matrix = []
+    def _calculate_assigned_feature_wise_distances(self) -> NDArray:
         distance_metric = get_distance_metric(self.distance_metric)
-
-        feature_wise_distance_matrix = [
-            distance_metric.calculate(cluster_centers, observation_ccordinates)
-            for cluster_centers, observation_ccordinates in zip(centers, self.data)
-        ]
-
-        return np.array(feature_wise_distance_matrix)
+        assigned_centers = self.cluster_centers[self.cluster_predictions]
+        return distance_metric.calculate(assigned_centers, self.data)
 
     def _calculate_pointwise_relevance(self) -> pd.DataFrame:
         """
@@ -192,9 +186,14 @@ class XkmExplainer(BaseExplainer):
         >>> explainer.fit()
         """
         if not self.is_fitted:
-            self.feature_wise_distance_matrix = (
-                self._calculate_feature_wise_distance_matrix()
-            )
+            if isinstance(self.flavour, XkmWithinScatterFlavour):
+                self.feature_wise_distance_matrix = (
+                    self._calculate_assigned_feature_wise_distances()
+                )
+            else:
+                self.feature_wise_distance_matrix = (
+                    self._calculate_feature_wise_distance_matrix()
+                )
             self.is_fitted = True
         return self
 
@@ -324,61 +323,20 @@ class XkmNextBestFlavour(BaseXkmFlavour):
         """
         distance_matrix = feature_wise_distance_matrix
 
-        num_features = distance_matrix.shape[2]
+        num_obs, num_clusters = distance_matrix.shape[0], distance_matrix.shape[1]
+        obs_indices = np.arange(num_obs)
 
-        assinged_cluster_list = []  # index des assigned cluster
-        fb_distance_to_assinged_cluster_list = []  # fb feature based
+        # feature-wise distances of every observation to its assigned cluster
+        fb_distance_to_assigned = distance_matrix[obs_indices, cluster_predictions, :]
 
-        best_alterantive_list = []  # index des next best cluster
-        fb_distance_to_best_alternative_list = []
-
-        # for every obs:
-        for idx, obs_distance_matrix in enumerate(
-            distance_matrix
-        ):  # e num_clusters x num_features
-            # index of assinged cluster
-            assigned_cluster = cluster_predictions[idx]  # für nte obs
-            # feature-wise distances of point to assigned cluster
-            distances_to_assigned = obs_distance_matrix[assigned_cluster]
-
-            assinged_cluster_list.append(assigned_cluster)
-            fb_distance_to_assinged_cluster_list.append(distances_to_assigned)
-
-            # find best alternative:
-
-            temp_bad = []  # best alternative distance
-            temp_idx = []
-
-            # for every feature
-            for i in range(num_features):
-                # best alternative:
-                best_alternative_distance = min(
-                    obs_distance_matrix[:, i]
-                )  # minimum distance to cluster
-                max_distance = max(obs_distance_matrix[:, i])
-                x = obs_distance_matrix[
-                    :, i
-                ].tolist()  # only to get index --> to which cluster does it belong
-                idx_best_alternative = x.index(
-                    best_alternative_distance
-                )  # welches cluster
-
-                # if the best alternative is the assigned cluster, we have to find the second best alternative
-                if idx_best_alternative == assigned_cluster:
-                    # ensure second closest cluster is chosen as new min
-                    x[idx_best_alternative] = x[idx_best_alternative] + max_distance
-                    best_alternative_distance = min(x)
-                    idx_best_alternative = x.index(best_alternative_distance)
-
-                temp_bad.append(best_alternative_distance)
-                temp_idx.append(idx_best_alternative)
-
-            best_alterantive_list.append(temp_idx)
-            fb_distance_to_best_alternative_list.append(temp_bad)
-
-        return np.array(fb_distance_to_assinged_cluster_list), np.array(
-            fb_distance_to_best_alternative_list
+        # reduce over only the non-assigned clusters, avoiding a masked copy of the
+        # full distance tensor; the per-feature minimum is the "next best" distance
+        keep_mask = np.arange(num_clusters)[None, :] != cluster_predictions[:, None]
+        fb_distance_to_best_alternative = distance_matrix.min(
+            axis=1, where=keep_mask[:, :, None], initial=np.inf
         )
+
+        return fb_distance_to_assigned, fb_distance_to_best_alternative
 
     def _calculate_pointwise_relevance(
         self,
@@ -473,17 +431,11 @@ class XkmAllFlavour(BaseXkmFlavour):
         ...     feature_wise_distance_matrix, cluster_predictions
         ... )
         """
-        # sum up distances over cluster
         complete_distances = np.sum(feature_wise_distance_matrix, axis=1)
-        # get distance to actual assigned cluster for every observation and feature
-        relevant_distances = [
-            feature_wise_distance_matrix[i, cluster_predictions[i], :]
-            for i in range(feature_wise_distance_matrix.shape[0])
+        observation_indices = np.arange(feature_wise_distance_matrix.shape[0])
+        actual_distances = feature_wise_distance_matrix[
+            observation_indices, cluster_predictions, :
         ]
-        actual_distances = np.vstack(
-            relevant_distances
-        )  # TODO: make own utility function as also used in shap
-        # calculate relevance
         n_clusters = feature_wise_distance_matrix.shape[1]
         pointwise_scores = (
             complete_distances - n_clusters * actual_distances
@@ -546,15 +498,18 @@ class XkmWithinScatterFlavour(BaseXkmFlavour):
         ... )
         """
 
-        # get number of observations in each cluster
-        n_obs_per_cluster = np.bincount(cluster_predictions)
-        # get scaled distance to actual assigned cluster for every observation and feature
-        relevant_distances_scaled = [
-            feature_wise_distance_matrix[i, cluster_predictions[i], :]
-            * n_obs_per_cluster[cluster_predictions[i]]
-            for i in range(feature_wise_distance_matrix.shape[0])
-        ]
-        pointwise_scores = np.vstack(relevant_distances_scaled)
+        if feature_wise_distance_matrix.ndim == 3:
+            observation_indices = np.arange(feature_wise_distance_matrix.shape[0])
+            actual_distances = feature_wise_distance_matrix[
+                observation_indices, cluster_predictions, :
+            ]
+        else:
+            actual_distances = feature_wise_distance_matrix
+
+        _, cluster_inverse, cluster_counts = np.unique(
+            cluster_predictions, return_inverse=True, return_counts=True
+        )
+        pointwise_scores = actual_distances * cluster_counts[cluster_inverse, None]
         return pd.DataFrame(1 - pointwise_scores)
 
 
@@ -613,28 +568,15 @@ class XkmScatterRatioFlavour(BaseXkmFlavour):
         ... )
         """
 
-        # get number of observations in each cluster
-        cluster_indices = np.unique(cluster_predictions)
         n_obs_per_cluster = np.bincount(cluster_predictions)
-        # get scaled distance to actual assigned cluster for every observation and feature
-        relevant_distances_scaled = [
-            feature_wise_distance_matrix[i, cluster_predictions[i], :]
-            * n_obs_per_cluster[cluster_predictions[i]]
-            for i in range(feature_wise_distance_matrix.shape[0])
-        ]
-        # get distances to other clusters
-        other_distances_scaled = [
-            feature_wise_distance_matrix[
-                i, cluster_indices != cluster_predictions[i], :
-            ]
-            * n_obs_per_cluster[
-                np.newaxis, cluster_indices != cluster_predictions[i], np.newaxis
-            ]
-            for i in range(feature_wise_distance_matrix.shape[0])
-        ]
-        actual_distances_scaled = np.vstack(relevant_distances_scaled)
-        other_distances_scaled = np.vstack(other_distances_scaled)
-        pointwise_scores = actual_distances_scaled / np.sum(
-            other_distances_scaled, axis=1
+        observation_indices = np.arange(feature_wise_distance_matrix.shape[0])
+        actual_distances_scaled = (
+            feature_wise_distance_matrix[observation_indices, cluster_predictions, :]
+            * n_obs_per_cluster[cluster_predictions, None]
         )
+        all_distances_scaled = np.sum(
+            feature_wise_distance_matrix * n_obs_per_cluster[None, :, None], axis=1
+        )
+        other_distances_scaled = all_distances_scaled - actual_distances_scaled
+        pointwise_scores = actual_distances_scaled / other_distances_scaled
         return pd.DataFrame(1 - pointwise_scores)

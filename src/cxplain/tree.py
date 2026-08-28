@@ -72,8 +72,9 @@ class DecisionTreeExplainer(BaseExplainer):
         >>> # Fit the explainer
         >>> explainer.fit()
         """
-        self.tree.fit(self.data, self.cluster_predictions)
-        self.is_fitted = True
+        if not self.is_fitted:
+            self.tree.fit(self.data, self.cluster_predictions)
+            self.is_fitted = True
         return self
 
     def _calculate_global_relevance(self) -> pd.DataFrame:
@@ -175,8 +176,9 @@ class RandomForestExplainer(BaseExplainer):
         >>> # Fit the explainer
         >>> explainer.fit()
         """
-        self.forest.fit(self.data, self.cluster_predictions)
-        self.is_fitted = True
+        if not self.is_fitted:
+            self.forest.fit(self.data, self.cluster_predictions)
+            self.is_fitted = True
         return self
 
     def _calculate_global_relevance(self) -> pd.DataFrame:

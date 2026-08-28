@@ -72,9 +72,10 @@ class ExKMCExplainer(BaseExplainer):
         >>> # Fit the explainer
         >>> explainer.fit()
         """
-        check_is_fitted(self.kmeans)
-        self.tree.fit(self.data, self.kmeans)
-        self.is_fitted = True
+        if not self.is_fitted:
+            check_is_fitted(self.kmeans)
+            self.tree.fit(self.data, self.kmeans)
+            self.is_fitted = True
         return self
 
     def _calculate_global_relevance(self) -> pd.DataFrame:

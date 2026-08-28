@@ -7,7 +7,6 @@ as the repo isn't developed anymore.
 from __future__ import annotations
 
 import warnings
-from collections import Counter
 from dataclasses import dataclass
 from typing import Dict, Optional, Tuple
 
@@ -458,8 +457,7 @@ class Tree:
     ) -> Optional["Surrogate_Split"]:
         """Find the best surrogate split for a given leaf, if any."""
         leaf_data = self._leaves_data[leaf]
-        mistakes_counter = Counter([curr_y for curr_y in leaf_data.y if curr_y != leaf.value])  # type: ignore[operator]
-        if len(mistakes_counter) == 0:
+        if not np.any(leaf_data.y != leaf.value):
             return None
 
         # Verify data type is float64 prior to computation
@@ -528,9 +526,7 @@ class Tree:
             self.__fill_stats__(node.left, x_data[left_mask], y[left_mask])  # type: ignore[arg-type]
             self.__fill_stats__(node.right, x_data[~left_mask], y[~left_mask])  # type: ignore[arg-type]
         else:
-            node.mistakes = int(
-                len([cluster for cluster in y if cluster != node.value])
-            )
+            node.mistakes = int(np.count_nonzero(y != node.value))
 
     @property
     def feature_importance(self) -> NDArray[np.floating]:

@@ -1,7 +1,6 @@
 from typing import List, Optional, Type
 
 import pandas as pd
-import numpy as np
 from nptyping import NDArray, Shape
 from nptyping.typing_ import Floating, Int
 
@@ -101,9 +100,7 @@ class GradientExplainer(BaseExplainer):
         >>> pointwise_relevance = explainer._calculate_pointwise_relevance()
         """
         self._check_fitted()
-        relevant_cluster_centers = np.take(
-            self.cluster_centers, self.cluster_predictions, axis=0
-        )
+        relevant_cluster_centers = self.cluster_centers[self.cluster_predictions]
         gradient_values = self.metric.calculate_gradient(
             self.data, relevant_cluster_centers
         )
@@ -189,12 +186,17 @@ class GradientExplainer(BaseExplainer):
         """
         self._check_fitted()
         pointwise_relevance = self._calculate_pointwise_relevance()
-        cluster_relevance = self._calculate_cluster_relevance(
-            pointwise_scores=pointwise_relevance
+        aggregation_scores = (
+            pointwise_relevance.abs()
+            if self.enable_abs_calculation
+            else pointwise_relevance
         )
-        global_relevance = self._calculate_global_relevance(
-            pointwise_scores=pointwise_relevance
+        cluster_relevance = (
+            aggregation_scores.assign(assigned_clusters=self.cluster_predictions)
+            .groupby(["assigned_clusters"])
+            .mean()
         )
+        global_relevance = aggregation_scores.mean()
 
         return ExplainedClustering(
             pointwise_relevance=pointwise_relevance,
