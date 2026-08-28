@@ -48,6 +48,10 @@ class NeonExplainer(BaseExplainer, ABC):
         self.feature_names = feature_names
         self.num_features = self.data.shape[1]
         self.networks = []
+        # constant across observations, so compute the squared center norms once
+        self._center_norms_sq = np.linalg.norm(self.cluster_centers, ord=2, axis=1) ** 2
+        self._hidden_layers = None
+        self._outputs = None
 
     @abstractmethod
     def _init_network(self):
@@ -101,7 +105,8 @@ class KMeansNetwork:
     output: Optional[float] = None
 
     def forward(
-        self, observation: NDArray[Shape["* num_features"], Floating]  # type: ignore
+        self,
+        observation: NDArray[Shape["* num_features"], Floating],  # type: ignore
     ) -> "KMeansNetwork":
         """
         Performs a forward pass of the neuralized K-Means network with the given observation and computes the output.
@@ -123,7 +128,9 @@ class KMeansNetwork:
         return self
 
     def backward(
-        self, observation: NDArray[Shape["* num_features"], Floating], beta: float  # type: ignore
+        self,
+        observation: NDArray[Shape["* num_features"], Floating],
+        beta: float,  # type: ignore
     ) -> NDArray[Shape["* num_features"], Floating]:  # type: ignore
         """
         Performs a backward pass of the neuralized K-Means network and computes feature relevance scores for one
@@ -144,9 +151,6 @@ class KMeansNetwork:
         """
         self._check_forward_pass()
 
-        num_clusters = self.hidden_layer.shape[0]
-        num_features = observation.shape[0]
-
         # relevance intermediate layer
         relevance_intermediate = (
             np.exp(-beta * self.hidden_layer)  # type: ignore
@@ -159,21 +163,16 @@ class KMeansNetwork:
         )
         hidden_wo_actual = np.delete(self.hidden_layer, self.index_actual, axis=0)  # type: ignore
 
-        contribution = np.multiply(
-            (
-                np.vstack([observation] * (num_clusters - 1))
-                - centers_distance_wo_actual
-            ),
-            np.vstack([hidden_wo_actual] * num_features).T,
-        )
+        contribution = (observation - centers_distance_wo_actual) * hidden_wo_actual[
+            :, None
+        ]
         sum_contribution = np.sum(contribution, axis=0)
 
         relevance_intermediate_wo_actual = np.delete(
             relevance_intermediate, self.index_actual, axis=0
         )
-        cluster_contribution = np.multiply(
-            np.vstack([relevance_intermediate_wo_actual] * num_features).T,
-            (contribution / sum_contribution),
+        cluster_contribution = relevance_intermediate_wo_actual[:, None] * (
+            contribution / sum_contribution
         )
         feature_relevances = np.sum(cluster_contribution, axis=0)
 
@@ -269,12 +268,8 @@ class NeonKMeansExplainer(
         """
         index_actual = self.predictions[index_observation]
         center_actual = self.cluster_centers[index_actual]
-        centers_actual = np.vstack([center_actual] * self.num_clusters)
-        weights = 2 * (centers_actual - self.cluster_centers)
-        bias = (
-            np.linalg.norm(self.cluster_centers, ord=2, axis=1) ** 2
-            - np.linalg.norm(centers_actual, ord=2, axis=1) ** 2
-        )
+        weights = 2 * (center_actual - self.cluster_centers)
+        bias = self._center_norms_sq - self._center_norms_sq[index_actual]
 
         return KMeansNetwork(index_actual=index_actual, weights=weights, bias=bias)
 
@@ -292,11 +287,30 @@ class NeonKMeansExplainer(
         """
         self._check_fitted()  # TODO: fitted decorator
         beta = self._get_beta()
-        relevances = [
-            self.networks[index].backward(observation, beta)
-            for index, observation in enumerate(self.data)
-        ]
-        return pd.DataFrame(np.row_stack(relevances)).pipe(
+        actual_centers = self.cluster_centers[self.predictions]
+        cluster_mask = (
+            np.arange(self.num_clusters)[None, :] != self.predictions[:, None]
+        )
+        hidden_layers = np.where(cluster_mask, self._hidden_layers, 0.0)
+
+        exponential_weights = np.exp(-beta * self._hidden_layers) * cluster_mask
+        relevance_intermediate = (
+            exponential_weights
+            / exponential_weights.sum(axis=1, keepdims=True)
+            * self._outputs[:, None]
+        )
+
+        input_offset = self.data - actual_centers / 2
+        sum_contribution = input_offset * hidden_layers.sum(
+            axis=1, keepdims=True
+        ) + hidden_layers @ (self.cluster_centers / 2)
+        weighted_hidden = relevance_intermediate * hidden_layers
+        relevance_numerator = input_offset * weighted_hidden.sum(
+            axis=1, keepdims=True
+        ) + weighted_hidden @ (self.cluster_centers / 2)
+        relevances = relevance_numerator / sum_contribution
+
+        return pd.DataFrame(relevances).pipe(
             self._rename_feature_columns, self.num_features, self.feature_names
         )
 
@@ -355,9 +369,7 @@ class NeonKMeansExplainer(
         >>> # Compute the beta value
         >>> beta = explainer._get_beta()
         """
-        return 1 / mean(
-            [self.networks[index].output for index in range(self.data.shape[0])]
-        )
+        return 1 / mean(self._outputs)
 
     def fit(self):
         """
@@ -369,8 +381,40 @@ class NeonKMeansExplainer(
         >>> explainer.fit()
         """
         if not self.is_fitted:
-            for index, observation in enumerate(self.data):
-                self.networks.append(self._init_network(index).forward(observation))
+            actual_centers = self.cluster_centers[self.predictions]
+            actual_norms_sq = self._center_norms_sq[self.predictions]
+            self._hidden_layers = (
+                2
+                * (
+                    np.sum(actual_centers * self.data, axis=1, keepdims=True)
+                    - self.data @ self.cluster_centers.T
+                )
+                + self._center_norms_sq
+                - actual_norms_sq[:, None]
+            )
+            cluster_mask = (
+                np.arange(self.num_clusters)[None, :] != self.predictions[:, None]
+            )
+            self._outputs = self._hidden_layers.min(
+                axis=1, where=cluster_mask, initial=np.inf
+            )
+
+            weights_by_cluster = 2 * (
+                self.cluster_centers[:, None, :] - self.cluster_centers[None, :, :]
+            )
+            biases_by_cluster = (
+                self._center_norms_sq[None, :] - self._center_norms_sq[:, None]
+            )
+            self.networks = [
+                KMeansNetwork(
+                    index_actual=prediction,
+                    weights=weights_by_cluster[prediction],
+                    bias=biases_by_cluster[prediction],
+                    hidden_layer=self._hidden_layers[index],
+                    output=self._outputs[index],
+                )
+                for index, prediction in enumerate(self.predictions)
+            ]
             self.is_fitted = True
         return self
 
